@@ -79,7 +79,10 @@ Supports Windows, Linux and MacOS.
 
 ## Open TODOs
 
-1. PCAN: CAN FD still not implemented
-1.1. GetAllAvailableHandles Searches through all handles and returns list with available channels : Use the get all channels with parameter API function?
+1. PCAN
+
+- CAN FD still not implemented
+- Implement GetAllAvailableHandles function: Maybe there is a convinient API function ?
+- SetValue and GetValue methods are not tested
 
 2. Other interfaces as vector, kvasor and others

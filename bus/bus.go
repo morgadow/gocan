@@ -45,12 +45,12 @@ type Bus interface {
 
 // Config CANBus config ready to be read from any json file
 type Config struct {
-	BusType         string   `json:"busType"`
-	Channel         string   `json:"channel"`
-	BaudRate        uint32   `json:"baudRate"`
-	BusState        BusState `json:"BusState"`
-	IsFD            bool     `json:"isFD"`
-	FDParameter     string   `json:"Parameter"`       // those parameter are only used if given bus is a FD bus
-	RecvErrorFrames bool     `json:"RecvErrorFrames"` // Defines behaviour on receiving error frames; if set to true, error frames can be received on Recv() call
-	LogErrorFrames  bool     `json:"LogErrorFrames"`  // Defines behaviour on receiving error frames; if set to true, error frames are logged
+	BusType          string   `json:"busType"`
+	Channel          string   `json:"channel"`
+	BaudRate         uint32   `json:"baudRate"`
+	BusState         BusState `json:"BusState"`
+	IsFD             bool     `json:"isFD"`
+	FDParameter      string   `json:"Parameter"`       // those parameter are only used if given bus is a FD bus
+	RecvStatusFrames bool     `json:"RecvStatusrames"` // Defines behaviour on receiving status frames; if set to true, status frames can be received on Recv() call, not all CAN drivers might support status frames
+	LogStatusFrames  bool     `json:"LogStatusFrames"` // Defines behaviour on receiving status frames; if set to true, status frames are logged, not all CAN drivers might support status frames
 }
