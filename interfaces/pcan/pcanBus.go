@@ -290,10 +290,10 @@ func (p pcanBus) recvSingleMessage() (TPCANStatus, *bus.Message, error) {
 	// receive single message, already converted to bus.Message
 	if p.Config.IsFD {
 		ret, msgFD, timestampFD, err = ReadFD(p.Handle)
-		if msg.MsgType == PCAN_MESSAGE_STATUS && p.Config.LogErrorFrames {
+		if msg.MsgType == PCAN_MESSAGE_STATUS && p.Config.LogStatusFrames {
 			log.Warning(getFormattedError(TPCANStatus(msg.Data[PositionStateInDataStatusFrame])))
 		}
-		if err != nil || ret == PCAN_ERROR_QRCVEMPTY || (msg.MsgType == PCAN_MESSAGE_STATUS && !p.Config.RecvErrorFrames) {
+		if err != nil || ret == PCAN_ERROR_QRCVEMPTY || (msg.MsgType == PCAN_MESSAGE_STATUS && !p.Config.RecvStatusFrames) {
 			return ret, nil, err
 		}
 		rxDLC = msgFD.DLC
@@ -302,10 +302,10 @@ func (p pcanBus) recvSingleMessage() (TPCANStatus, *bus.Message, error) {
 		rxData = msgFD.Data[:getLengthFromDLC(rxDLC)] // only return the suggested message length, even if full message is held in buffer with up to 64 byte
 	} else {
 		ret, msg, timestamp, err = Read(p.Handle)
-		if msg.MsgType == PCAN_MESSAGE_STATUS && p.Config.LogErrorFrames {
+		if msg.MsgType == PCAN_MESSAGE_STATUS && p.Config.LogStatusFrames {
 			log.Warning(getFormattedError(TPCANStatus(msg.Data[PositionStateInDataStatusFrame])))
 		}
-		if err != nil || ret == PCAN_ERROR_QRCVEMPTY || (msg.MsgType == PCAN_MESSAGE_STATUS && !p.Config.RecvErrorFrames) {
+		if err != nil || ret == PCAN_ERROR_QRCVEMPTY || (msg.MsgType == PCAN_MESSAGE_STATUS && !p.Config.RecvStatusFrames) {
 			return ret, nil, err
 		}
 
