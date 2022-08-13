@@ -1,4 +1,4 @@
-package bus
+package gocan
 
 type MessageID uint32
 type MessageType uint8

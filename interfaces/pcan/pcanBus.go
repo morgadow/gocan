@@ -6,7 +6,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/morgadow/gocan/bus"
+	"github.com/morgadow/gocan"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -118,7 +118,7 @@ var CAN_FD_DLC = [...]uint8{0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 6
 
 // pcanBus PCAN BusIf capable of sending and reading CAN messages
 type pcanBus struct {
-	Config    bus.Config
+	Config    gocan.Config
 	Handle    TPCANHandle
 	Bitrate   TPCANBaudrate  // only set if not a FD channel
 	BitrateFD TPCANBitrateFD // only set if a FD channel
@@ -129,7 +129,7 @@ type pcanBus struct {
 }
 
 // NewPCANBus Convenient method for creating and initiating a pcanBus with multiple default parameters channel
-func NewPCANBus(config *bus.Config) (bus.Bus, error) {
+func NewPCANBus(config *gocan.Config) (gocan.Bus, error) {
 
 	var baud TPCANBaudrate
 	var bitrateFD TPCANBitrateFD
@@ -172,9 +172,9 @@ func NewPCANBus(config *bus.Config) (bus.Bus, error) {
 
 		// set bus state parameter
 		switch config.BusState {
-		case bus.ACTIVE:
+		case gocan.ACTIVE:
 			err = newBus.SetValue(PCAN_LISTEN_ONLY, uint32(PCAN_PARAMETER_OFF))
-		case bus.PASSIVE:
+		case gocan.PASSIVE:
 			err = newBus.SetValue(PCAN_LISTEN_ONLY, uint32(PCAN_PARAMETER_ON))
 		default:
 			err = errors.New(fmt.Sprintf("invalid busstate: %v", err))
@@ -230,10 +230,10 @@ func (p *pcanBus) Initialize() error {
 
 // Recv Returns message from PCANStandardBus
 // timeout: Timeout for receiving message from CAN bus in milliseconds (if set below zero, no timeout is set)
-func (p pcanBus) Recv(timeout uint32) (*bus.Message, error) {
+func (p pcanBus) Recv(timeout uint32) (*gocan.Message, error) {
 
 	var ret = PCAN_ERROR_UNKNOWN
-	var msg *bus.Message = nil
+	var msg *gocan.Message = nil
 	var err error = nil
 
 	// timeout handling: a negative timeout sets timeout to infinity
@@ -271,11 +271,11 @@ func (p pcanBus) Recv(timeout uint32) (*bus.Message, error) {
 	return msg, err
 }
 
-// recvSingleMessage Reads single message from PCAN CAN Bus.
-func (p pcanBus) recvSingleMessage() (TPCANStatus, *bus.Message, error) {
+// recvSingleMessage Reads single message from PCAN CAN gocan.
+func (p pcanBus) recvSingleMessage() (TPCANStatus, *gocan.Message, error) {
 
-	var newMsg bus.Message
-	var msgType bus.MessageType
+	var newMsg gocan.Message
+	var msgType gocan.MessageType
 	var ret = PCAN_ERROR_UNKNOWN
 	var msg TPCANMessage
 	var msgFD TPCANMessageFD
@@ -287,7 +287,7 @@ func (p pcanBus) recvSingleMessage() (TPCANStatus, *bus.Message, error) {
 	var rxDLC uint8                // buffer for uniform handling FD or std messages
 	var err error = nil
 
-	// receive single message, already converted to bus.Message
+	// receive single message, already converted to gocan.Message
 	if p.Config.IsFD {
 		ret, msgFD, timestampFD, err = ReadFD(p.Handle)
 		if msg.MsgType == PCAN_MESSAGE_STATUS && p.Config.LogStatusFrames {
@@ -317,20 +317,20 @@ func (p pcanBus) recvSingleMessage() (TPCANStatus, *bus.Message, error) {
 
 	// determine message frame type
 	if rxMsgType == PCAN_MESSAGE_STANDARD || rxMsgType == PCAN_MESSAGE_EXTENDED || rxMsgType == PCAN_MESSAGE_FD {
-		msgType = bus.DataFrame
+		msgType = gocan.DataFrame
 	} else if rxMsgType == PCAN_MESSAGE_RTR {
-		msgType = bus.RemoteFrame
+		msgType = gocan.RemoteFrame
 	} else if rxMsgType == PCAN_MESSAGE_ERRFRAME || rxMsgType == PCAN_MESSAGE_STATUS {
-		msgType = bus.ErrorFrame
+		msgType = gocan.ErrorFrame
 	} else if rxMsgType == PCAN_MESSAGE_BRS {
-		msgType = bus.FDBitRateSwitchFrame
+		msgType = gocan.FDBitRateSwitchFrame
 	} else if rxMsgType == PCAN_MESSAGE_ESI {
-		msgType = bus.FDErrorStateIndicator
+		msgType = gocan.FDErrorStateIndicator
 	}
 
 	// save message data
-	newMsg = bus.Message{
-		ID:         bus.MessageID(msg.ID),
+	newMsg = gocan.Message{
+		ID:         gocan.MessageID(msg.ID),
 		TimeStamp:  rxTimeStamp,
 		Type:       msgType,
 		Data:       rxData,
@@ -344,7 +344,7 @@ func (p pcanBus) recvSingleMessage() (TPCANStatus, *bus.Message, error) {
 }
 
 // Send Sends message over PCAN channel
-func (p pcanBus) Send(msg *bus.Message) error {
+func (p pcanBus) Send(msg *gocan.Message) error {
 
 	var ret = PCAN_ERROR_UNKNOWN
 	var err error = nil
@@ -392,17 +392,17 @@ func (p pcanBus) Status() (uint32, error) {
 }
 
 // State Returns State of PCANStandardBus channel
-func (p pcanBus) State() bus.BusState {
+func (p pcanBus) State() gocan.BusState {
 	return p.Config.BusState
 }
 
 // ReadBuffer Reads from device buffer until it has no more messages stored with an optional message limit
-func (p pcanBus) ReadBuffer(limit uint16) ([]bus.Message, error) {
+func (p pcanBus) ReadBuffer(limit uint16) ([]gocan.Message, error) {
 
 	var ret = PCAN_ERROR_UNKNOWN
-	var msg *bus.Message
+	var msg *gocan.Message
 	var err error = nil
-	var msgs []bus.Message
+	var msgs []gocan.Message
 
 	// read until buffer empty is returned
 	for {
@@ -429,7 +429,7 @@ func (p pcanBus) SetValue(param TPCANParameter, value uint32) error {
 }
 
 // FilterMessages Apply message filter to PCANStandardBus channel
-func (p pcanBus) SetFilter(fromID bus.MessageID, toID bus.MessageID, mode uint8) error {
+func (p pcanBus) SetFilter(fromID gocan.MessageID, toID gocan.MessageID, mode uint8) error {
 	state, err := FilterMessages(p.Handle, TPCANMsgID(fromID), TPCANMsgID(toID), TPCANMode(mode))
 	return evalRetval(state, err)
 }

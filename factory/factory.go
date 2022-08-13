@@ -3,14 +3,14 @@ package factory
 import (
 	"errors"
 
-	"github.com/morgadow/gocan/bus"
+	"github.com/morgadow/gocan"
 	"github.com/morgadow/gocan/interfaces/pcan"
 )
 
 // CreateBus Creates and initializes a connection to a CANBus
-func CreateBus(config *bus.Config) (bus.Bus, error) {
+func CreateBus(config *gocan.Config) (gocan.Bus, error) {
 
-	var newBus bus.Bus = nil
+	var newBus gocan.Bus = nil
 	var err error = nil
 
 	// create the selected can bus connection
