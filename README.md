@@ -81,8 +81,9 @@ Supports Windows, Linux and MacOS.
 
 1. PCAN
 
-- CAN FD still not implemented
+- Missing CAN FD implementation
+- CAN Epoch not set to correct PCAN timestamp
 - Implement GetAllAvailableHandles function: Maybe there is a convinient API function ?
-- SetValue and GetValue methods are not tested
+- SetValue and GetValue methods are not tested and does not support all types
 
 2. Other interfaces as vector, kvasor and others

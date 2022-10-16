@@ -156,7 +156,7 @@ func NewPCANBus(config *gocan.Config) (gocan.Bus, error) {
 			return nil, InvalidBaudRateError
 		}
 
-		newBus := pcanBus{
+		newBus := &pcanBus{
 			Config:    *config,
 			Handle:    handle,
 			Bitrate:   baud,
@@ -230,7 +230,7 @@ func (p *pcanBus) Initialize() error {
 
 // Recv Returns message from PCANStandardBus
 // timeout: Timeout for receiving message from CAN bus in milliseconds (if set below zero, no timeout is set)
-func (p pcanBus) Recv(timeout uint32) (*gocan.Message, error) {
+func (p *pcanBus) Recv(timeout uint32) (*gocan.Message, error) {
 
 	var ret = PCAN_ERROR_UNKNOWN
 	var msg *gocan.Message = nil
@@ -272,7 +272,7 @@ func (p pcanBus) Recv(timeout uint32) (*gocan.Message, error) {
 }
 
 // recvSingleMessage Reads single message from PCAN CAN gocan.
-func (p pcanBus) recvSingleMessage() (TPCANStatus, *gocan.Message, error) {
+func (p *pcanBus) recvSingleMessage() (TPCANStatus, *gocan.Message, error) {
 
 	var newMsg gocan.Message
 	var msgType gocan.MessageType
@@ -344,7 +344,7 @@ func (p pcanBus) recvSingleMessage() (TPCANStatus, *gocan.Message, error) {
 }
 
 // Send Sends message over PCAN channel
-func (p pcanBus) Send(msg *gocan.Message) error {
+func (p *pcanBus) Send(msg *gocan.Message) error {
 
 	var ret = PCAN_ERROR_UNKNOWN
 	var err error = nil
@@ -380,24 +380,24 @@ func (p pcanBus) Send(msg *gocan.Message) error {
 }
 
 // StatusIsOkay Convenient function to check PCANStandardBus for PCAN_ERROR_OK Status, other bus errors are ignored
-func (p pcanBus) StatusIsOkay() (bool, error) {
+func (p *pcanBus) StatusIsOkay() (bool, error) {
 	ret, err := GetStatus(p.Handle)
 	return ret == PCAN_ERROR_OK, err
 }
 
 // Status Returns Status of PCANStandardBus channel
-func (p pcanBus) Status() (uint32, error) {
+func (p *pcanBus) Status() (uint32, error) {
 	state, err := GetStatus(p.Handle)
 	return uint32(state), evalRetval(state, err)
 }
 
 // State Returns State of PCANStandardBus channel
-func (p pcanBus) State() gocan.BusState {
+func (p *pcanBus) State() gocan.BusState {
 	return p.Config.BusState
 }
 
 // ReadBuffer Reads from device buffer until it has no more messages stored with an optional message limit
-func (p pcanBus) ReadBuffer(limit uint16) ([]gocan.Message, error) {
+func (p *pcanBus) ReadBuffer(limit uint16) ([]gocan.Message, error) {
 
 	var ret = PCAN_ERROR_UNKNOWN
 	var msg *gocan.Message
@@ -417,31 +417,31 @@ func (p pcanBus) ReadBuffer(limit uint16) ([]gocan.Message, error) {
 }
 
 // GetValue Retrieves a TPCANParameter value from channel or device
-func (p pcanBus) GetValue(param TPCANParameter) (uint32, error) {
+func (p *pcanBus) GetValue(param TPCANParameter) (uint32, error) {
 	state, val, err := GetValue(p.Handle, param)
 	return val, evalRetval(state, err)
 }
 
 // SetValue Configures a TPCANParameter from channel or device
-func (p pcanBus) SetValue(param TPCANParameter, value uint32) error {
+func (p *pcanBus) SetValue(param TPCANParameter, value uint32) error {
 	state, err := SetValue(p.Handle, param, value)
 	return evalRetval(state, err)
 }
 
 // FilterMessages Apply message filter to PCANStandardBus channel
-func (p pcanBus) SetFilter(fromID gocan.MessageID, toID gocan.MessageID, mode uint8) error {
+func (p *pcanBus) SetFilter(fromID gocan.MessageID, toID gocan.MessageID, mode uint8) error {
 	state, err := FilterMessages(p.Handle, TPCANMsgID(fromID), TPCANMsgID(toID), TPCANMode(mode))
 	return evalRetval(state, err)
 }
 
 // Reset Resets PCANStandardBus in order to gain PCAN_ERROR_OK Status
-func (p pcanBus) Reset() error {
+func (p *pcanBus) Reset() error {
 	state, err := Reset(p.Handle)
 	return evalRetval(state, err)
 }
 
 // Shutdown Shuts channel down and closes connection
-func (p pcanBus) Shutdown() error {
+func (p *pcanBus) Shutdown() error {
 
 	state, err := Uninitialize(p.Handle)
 	if p.recvEvent != 0 { // close handle
