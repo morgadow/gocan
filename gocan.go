@@ -33,7 +33,7 @@ type Message struct {
 // Bus Interface for all main CANBus functionality. Lower device interfaces may support more functionality
 type Bus interface {
 	Send(*Message) error
-	Recv(timeout uint32) (*Message, error)
+	Recv(timeout int) (*Message, error)
 	StatusIsOkay() (bool, error)
 	Status() (uint32, error)
 	State() BusState

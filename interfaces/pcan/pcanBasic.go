@@ -14,7 +14,7 @@ const DriverWin = "PCANBasic.dll"     // PCAN windows driver dll name, which can
 const DriverMac = "libPCBUSB.dylib"   // PCAN max driver file name, which can be imported once the PCAN driver is installed
 const DriverLinux = "libpcanbasic.so" // PCAN linux driver file name, which can be imported once the PCAN driver is installed
 
-var APINotLoadedOrFoundError = errors.New("pcan api not loaded or installed, please load api over pcan.LoadAPI")
+var ErrAPINotLoadedOrFound = errors.New("pcan api not loaded or installed, please load api over pcan.LoadAPI")
 
 var pcanAPIHandle syscall.Handle = 0 // process handle for PCAN driver
 var pHandleInitialize uintptr = 0
@@ -416,7 +416,7 @@ func Initialize(channel TPCANHandle, baudRate TPCANBaudrate, hwType TPCANType, i
 	var err error = nil
 
 	if !APILoaded {
-		return PCAN_ERROR_UNKNOWN, APINotLoadedOrFoundError
+		return PCAN_ERROR_UNKNOWN, ErrAPINotLoadedOrFound
 	}
 
 	ret, _, errCall := syscall.Syscall6(pHandleInitialize, nargs, uintptr(channel), uintptr(baudRate), uintptr(hwType), uintptr(ioPort), uintptr(interrupt), 0)
@@ -431,19 +431,19 @@ func Initialize(channel TPCANHandle, baudRate TPCANBaudrate, hwType TPCANType, i
 // bitRateFD: The speed for the communication (FD bit rate string)
 // Note:
 // Bit rate string must follow the following construction rules:
-// 	* parameter and values must be separated by '='
-// 	* Couples of Parameter/value must be separated by ','
-// 	* Following Parameter must be filled out: f_clock, data_brp, data_sjw, data_tseg1, data_tseg2,
-//   nom_brp, nom_sjw, nom_tseg1, nom_tseg2.
-// 	* Following Parameters are optional (not used yet): data_ssp_offset, nom_sam
-// 	* Example: f_clock=80000000,nom_brp=10,nom_tseg1=5,nom_tseg2=2,nom_sjw=1,data_brp=4,data_tseg1=7,data_tseg2=2,data_sjw=1
+//   - parameter and values must be separated by '='
+//   - Couples of Parameter/value must be separated by ','
+//   - Following Parameter must be filled out: f_clock, data_brp, data_sjw, data_tseg1, data_tseg2,
+//     nom_brp, nom_sjw, nom_tseg1, nom_tseg2.
+//   - Following Parameters are optional (not used yet): data_ssp_offset, nom_sam
+//   - Example: f_clock=80000000,nom_brp=10,nom_tseg1=5,nom_tseg2=2,nom_sjw=1,data_brp=4,data_tseg1=7,data_tseg2=2,data_sjw=1
 func InitializeFD(channel TPCANHandle, bitRateFD TPCANBitrateFD) (TPCANStatus, error) {
 
 	var nargs uintptr = 0
 	var err error = nil
 
 	if !APILoaded {
-		return PCAN_ERROR_UNKNOWN, APINotLoadedOrFoundError
+		return PCAN_ERROR_UNKNOWN, ErrAPINotLoadedOrFound
 	}
 
 	ret, _, errCall := syscall.Syscall(pHandleInitializeFD, nargs, uintptr(channel), uintptr(unsafe.Pointer(&bitRateFD)), 0)
@@ -461,7 +461,7 @@ func Uninitialize(channel TPCANHandle) (TPCANStatus, error) {
 	var err error = nil
 
 	if !APILoaded {
-		return PCAN_ERROR_UNKNOWN, APINotLoadedOrFoundError
+		return PCAN_ERROR_UNKNOWN, ErrAPINotLoadedOrFound
 	}
 
 	ret, _, errCall := syscall.Syscall(pHandleUninitialize, nargs, uintptr(channel), 0, 0)
@@ -479,7 +479,7 @@ func Reset(channel TPCANHandle) (TPCANStatus, error) {
 	var err error = nil
 
 	if !APILoaded {
-		return PCAN_ERROR_UNKNOWN, APINotLoadedOrFoundError
+		return PCAN_ERROR_UNKNOWN, ErrAPINotLoadedOrFound
 	}
 
 	ret, _, errCall := syscall.Syscall(pHandleReset, nargs, uintptr(channel), 0, 0)
@@ -497,7 +497,7 @@ func GetStatus(channel TPCANHandle) (TPCANStatus, error) {
 	var err error = nil
 
 	if !APILoaded {
-		return PCAN_ERROR_UNKNOWN, APINotLoadedOrFoundError
+		return PCAN_ERROR_UNKNOWN, ErrAPINotLoadedOrFound
 	}
 
 	ret, _, errCall := syscall.Syscall(pHandleGetStatus, nargs, uintptr(channel), 0, 0)
@@ -517,7 +517,7 @@ func Read(channel TPCANHandle) (TPCANStatus, TPCANMessage, TPCANTimestamp, error
 	var err error = nil
 
 	if !APILoaded {
-		return PCAN_ERROR_UNKNOWN, msg, timeStamp, APINotLoadedOrFoundError
+		return PCAN_ERROR_UNKNOWN, msg, timeStamp, ErrAPINotLoadedOrFound
 	}
 
 	ret, _, errCall := syscall.Syscall(pHandleRead, nargs, uintptr(channel), uintptr(unsafe.Pointer(&msg)), uintptr(unsafe.Pointer(&timeStamp)))
@@ -537,7 +537,7 @@ func ReadFD(channel TPCANHandle) (TPCANStatus, TPCANMessageFD, TPCANTimestampFD,
 	var err error = nil
 
 	if !APILoaded {
-		return PCAN_ERROR_UNKNOWN, msgFD, timeStampFD, APINotLoadedOrFoundError
+		return PCAN_ERROR_UNKNOWN, msgFD, timeStampFD, ErrAPINotLoadedOrFound
 	}
 
 	ret, _, errCall := syscall.Syscall(pHandleReadFD, nargs, uintptr(channel), uintptr(unsafe.Pointer(&msgFD)), uintptr(unsafe.Pointer(&timeStampFD)))
@@ -556,7 +556,7 @@ func Write(channel TPCANHandle, msg TPCANMessage) (TPCANStatus, error) {
 	var err error = nil
 
 	if !APILoaded {
-		return PCAN_ERROR_UNKNOWN, APINotLoadedOrFoundError
+		return PCAN_ERROR_UNKNOWN, ErrAPINotLoadedOrFound
 	}
 
 	ret, _, errCall := syscall.Syscall(pHandleWrite, nargs, uintptr(channel), uintptr(unsafe.Pointer(&msg)), 0)
@@ -575,7 +575,7 @@ func WriteFD(channel TPCANHandle, msgFD TPCANMessageFD) (TPCANStatus, error) {
 	var err error = nil
 
 	if !APILoaded {
-		return PCAN_ERROR_UNKNOWN, APINotLoadedOrFoundError
+		return PCAN_ERROR_UNKNOWN, ErrAPINotLoadedOrFound
 	}
 
 	ret, _, errCall := syscall.Syscall(pHandleWriteFD, nargs, uintptr(channel), uintptr(unsafe.Pointer(&msgFD)), 0)
@@ -596,7 +596,7 @@ func FilterMessages(channel TPCANHandle, fromID TPCANMsgID, toID TPCANMsgID, mod
 	var err error = nil
 
 	if !APILoaded {
-		return PCAN_ERROR_UNKNOWN, APINotLoadedOrFoundError
+		return PCAN_ERROR_UNKNOWN, ErrAPINotLoadedOrFound
 	}
 
 	ret, _, errCall := syscall.Syscall6(pHandleFilterMessages, nargs, uintptr(channel), uintptr(fromID), uintptr(toID), uintptr(mode), 0, 0)
@@ -610,8 +610,9 @@ func FilterMessages(channel TPCANHandle, fromID TPCANMsgID, toID TPCANMsgID, mod
 // Channel: The handle of a PCAN Channel
 // param: The TPCANParameter parameter to get
 // Note: Parameters can be present or not according with the kind
-// 	of Hardware (PCAN Channel) being used. If a parameter is not available,
-// 	a PCAN_ERROR_ILLPARAMTYPE error will be returned
+//
+//	of Hardware (PCAN Channel) being used. If a parameter is not available,
+//	a PCAN_ERROR_ILLPARAMTYPE error will be returned
 func GetValue(channel TPCANHandle, param TPCANParameter) (TPCANStatus, uint32, error) {
 
 	var nargs uintptr = 0
@@ -619,7 +620,7 @@ func GetValue(channel TPCANHandle, param TPCANParameter) (TPCANStatus, uint32, e
 	var value uint32 = 0
 
 	if !APILoaded {
-		return PCAN_ERROR_UNKNOWN, value, APINotLoadedOrFoundError
+		return PCAN_ERROR_UNKNOWN, value, ErrAPINotLoadedOrFound
 	}
 
 	ret, _, errCall := syscall.Syscall6(pHandleGetValue, nargs, uintptr(channel), uintptr(param), uintptr(unsafe.Pointer(&value)), unsafe.Sizeof(value), 0, 0)
@@ -634,6 +635,7 @@ func GetValue(channel TPCANHandle, param TPCANParameter) (TPCANStatus, uint32, e
 // param: The TPCANParameter parameter to set
 // value: Value of parameter
 // Note: Parameters can be present or not according with the kind
+//
 //	of Hardware (PCAN Channel) being used. If a parameter is not available,
 //	a PCAN_ERROR_ILLPARAMTYPE error will be returned.
 func SetValue(channel TPCANHandle, param TPCANParameter, value uint32) (TPCANStatus, error) { // todo can this always be uint32? I think a string value is also possible?!
@@ -642,7 +644,7 @@ func SetValue(channel TPCANHandle, param TPCANParameter, value uint32) (TPCANSta
 	var err error = nil
 
 	if !APILoaded {
-		return PCAN_ERROR_UNKNOWN, APINotLoadedOrFoundError
+		return PCAN_ERROR_UNKNOWN, ErrAPINotLoadedOrFound
 	}
 
 	ret, _, errCall := syscall.Syscall6(pHandleSetValue, nargs, uintptr(channel), uintptr(param), uintptr(unsafe.Pointer(&value)), unsafe.Sizeof(value), 0, 0)
@@ -661,7 +663,7 @@ func GetErrorText(status TPCANStatus, language TPCANLanguage) (TPCANStatus, [256
 	var buffer [256]byte
 
 	if !APILoaded {
-		return PCAN_ERROR_UNKNOWN, buffer, APINotLoadedOrFoundError
+		return PCAN_ERROR_UNKNOWN, buffer, ErrAPINotLoadedOrFound
 	}
 
 	ret, _, errCall := syscall.Syscall(pHandleGetErrorText, nargs, uintptr(status), uintptr(language), uintptr(unsafe.Pointer(&buffer)))
@@ -680,7 +682,7 @@ func LookUpChannel(parameters string, foundChannel []TPCANHandle) (TPCANStatus, 
 	var err error = nil
 
 	if !APILoaded {
-		return PCAN_ERROR_UNKNOWN, APINotLoadedOrFoundError
+		return PCAN_ERROR_UNKNOWN, ErrAPINotLoadedOrFound
 	}
 
 	ret, _, errCall := syscall.Syscall(pHandleLookUpChannel, nargs, uintptr(unsafe.Pointer(&parameters)), uintptr(unsafe.Pointer(&foundChannel)), 0)

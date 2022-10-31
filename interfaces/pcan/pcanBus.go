@@ -39,7 +39,7 @@ var AvailableBaudRates = map[uint32]TPCANBaudrate{
 	10000:   PCAN_BAUD_10K,
 	5000:    PCAN_BAUD_5K,
 }
-var InvalidBaudRateError = errors.New("invalid baudrate selected, choose one of pcan.AvailableBaudRates")
+var ErrInvalidBaudRate = errors.New("invalid baudrate selected, choose one of pcan.AvailableBaudRates")
 
 // AvailableChannels All available PCAN Channels
 // Defined this way to improve config file suppport
@@ -111,7 +111,7 @@ var AvailableChannels = map[string]TPCANHandle{
 	"PCAN_LANBUS15": PCAN_LANBUS15,
 	"PCAN_LANBUS16": PCAN_LANBUS16,
 }
-var InvalidChannelError = errors.New("invalid channel selected, choose one of pcan.AvailableChannels")
+var ErrInvalidChannel = errors.New("invalid channel selected, choose one of pcan.AvailableChannels")
 
 // CAN_FD_DLC List of valid data lengths for a CAN FD message
 var CAN_FD_DLC = [...]uint8{0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64}
@@ -150,10 +150,10 @@ func NewPCANBus(config *gocan.Config) (gocan.Bus, error) {
 	} else {
 
 		if handle, ok = AvailableChannels[config.Channel]; !ok {
-			return nil, InvalidChannelError
+			return nil, ErrInvalidChannel
 		}
 		if baud, ok = AvailableBaudRates[config.BaudRate]; !ok {
-			return nil, InvalidBaudRateError
+			return nil, ErrInvalidBaudRate
 		}
 
 		newBus := &pcanBus{
@@ -177,7 +177,7 @@ func NewPCANBus(config *gocan.Config) (gocan.Bus, error) {
 		case gocan.PASSIVE:
 			err = newBus.SetValue(PCAN_LISTEN_ONLY, uint32(PCAN_PARAMETER_ON))
 		default:
-			err = errors.New(fmt.Sprintf("invalid busstate: %v", err))
+			err = fmt.Errorf("invalid busstate: %v", err)
 		}
 
 		return newBus, err
@@ -230,7 +230,7 @@ func (p *pcanBus) Initialize() error {
 
 // Recv Returns message from PCANStandardBus
 // timeout: Timeout for receiving message from CAN bus in milliseconds (if set below zero, no timeout is set)
-func (p *pcanBus) Recv(timeout uint32) (*gocan.Message, error) {
+func (p *pcanBus) Recv(timeout int) (*gocan.Message, error) {
 
 	var ret = PCAN_ERROR_UNKNOWN
 	var msg *gocan.Message = nil
@@ -240,7 +240,7 @@ func (p *pcanBus) Recv(timeout uint32) (*gocan.Message, error) {
 	if timeout < 0 {
 		timeout = syscall.INFINITE
 	}
-	var timeoutU32 = timeout
+	var timeoutU32 = uint32(timeout)
 	startTime := time.Now().UnixNano() / int64(time.Millisecond)
 	endTime := startTime + int64(timeout)
 
@@ -356,22 +356,22 @@ func (p *pcanBus) Send(msg *gocan.Message) error {
 			MsgType: TPCANMessageType(msg.Type),
 			DLC:     msg.DLC,
 		}
-		for i := 0; i < len(msg.Data); i++ {
-			pcanMsg.Data[i] = msg.Data[i]
-		}
+		copy(pcanMsg.Data[:], msg.Data)
 
 		ret, err = WriteFD(p.Handle, pcanMsg)
 
 		// Standard CAN copy to CAN message and send
 	} else {
+		msgType := PCAN_MESSAGE_STANDARD
+		if msg.IsExtended {
+			msgType = PCAN_MESSAGE_EXTENDED
+		}
 		var pcanMsg = TPCANMessage{
 			ID:      TPCANMsgID(msg.ID),
-			MsgType: TPCANMessageType(msg.Type),
+			MsgType: msgType,
 			DLC:     msg.DLC,
 		}
-		for i := 0; i < len(msg.Data); i++ {
-			pcanMsg.Data[i] = msg.Data[i]
-		}
+		copy(pcanMsg.Data[:], msg.Data)
 
 		ret, err = Write(p.Handle, pcanMsg)
 	}
@@ -473,7 +473,7 @@ func getFormattedError(status TPCANStatus) error {
 		return err
 	}
 	if ret != PCAN_ERROR_OK {
-		return errors.New(fmt.Sprintf("could not retrieve error text for pcan error %v", status))
+		return fmt.Errorf("could not retrieve error text for pcan error %v", status)
 	}
 
 	var numBytes = 0
