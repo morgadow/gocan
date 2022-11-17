@@ -354,7 +354,7 @@ func (p *pcanBus) Send(msg *gocan.Message) error {
 		var pcanMsg = TPCANMessageFD{
 			ID:      TPCANMsgID(msg.ID),
 			MsgType: TPCANMessageType(msg.Type),
-			DLC:     msg.DLC,
+			DLC:     uint8(len(msg.Data)),
 		}
 		copy(pcanMsg.Data[:], msg.Data)
 
@@ -369,7 +369,7 @@ func (p *pcanBus) Send(msg *gocan.Message) error {
 		var pcanMsg = TPCANMessage{
 			ID:      TPCANMsgID(msg.ID),
 			MsgType: msgType,
-			DLC:     msg.DLC,
+			DLC:     getDLCFromLength(len(msg.Data)),
 		}
 		copy(pcanMsg.Data[:], msg.Data)
 

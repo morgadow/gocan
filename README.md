@@ -3,14 +3,24 @@
 A Golang CAN Bus interface supporting different CAN device manufactures.
 Supports Windows, Linux and MacOS.
 
+```golang
+// Bus Interface for all main CANBus functionality. Lower device interfaces may support more functionality
+type Bus interface {
+ Send(*Message) error
+ Recv(timeout int) (*Message, error)
+ StatusIsOkay() (bool, error)
+ Status() (uint32, error)
+ State() BusState
+ ReadBuffer(limit uint16) ([]Message, error)
+ SetFilter(fromID MessageID, toID MessageID, mode uint8) error
+ Reset() error
+ Shutdown() error
+}
+```
+
 ## Supported Interfaces
 
 - PEAK Systems PCAN
-
-## Notes
-
-- Error frames are only received on Recv() call as message if the config *"RecvErrorFrames"* is set
-- Error frames are logged if the config *"LogErrorFrames"* is set
 
 ### Examples
 
@@ -77,13 +87,21 @@ Supports Windows, Linux and MacOS.
 
 ```
 
+## Changelog
+
+- v1.0.0:
+  - initial working version implementing project structure for sending and receiving messages over a CAN bus connection
+  - fully implemented *pcan* can interface
+
+- v1.0.1:
+  - message DLC now automatically evaluated when sending a message, before this the DLC must be set manually to an non zero value
+  - updated README with an changelog section
+
 ## Open TODOs
 
-1. PCAN
-
-- Missing CAN FD implementation
-- CAN Epoch not set to correct PCAN timestamp
-- Implement GetAllAvailableHandles function: Maybe there is a convinient API function ?
-- SetValue and GetValue methods are not tested and does not support all types
-
-2. Other interfaces as vector, kvasor and others
+- option to create listener for CAN bus connections with different triggers for messages like message id masks, ...
+- PCAN: missing CANFD implementation
+- PCAN: CAN Epoch not set to correct PCAN timestamp, currently set to boot time
+- PCAN: SetValue and GetValue methods are not tested and does not support all types
+- Bus: implement GetAllAvailableHandles function. Maybe there is a convinient API function for devices?
+- every other manufacturer
