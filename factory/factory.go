@@ -26,7 +26,7 @@ func CreateBus(config *gocan.Config) (gocan.Bus, error) {
 }
 
 // Lists all available channels for all manufactures
-func ListChannels() map[string][]string {
+func ListAllChannels() map[string][]string {
 
 	var channels = make(map[string][]string)
 

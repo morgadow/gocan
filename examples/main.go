@@ -9,6 +9,6 @@ import (
 func main() {
 
 	// list all available channels
-	channels := factory.ListChannels()
+	channels := factory.ListAllChannels()
 	fmt.Println(channels)
 }
