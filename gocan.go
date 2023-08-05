@@ -3,7 +3,9 @@ package gocan
 type MessageID uint32
 type MessageType uint8
 type BusState uint8
+type ChannelCondition uint8
 
+// Different types of available frames on a CAN bus connection
 const (
 	DataFrame             MessageType = iota // CAN Data frame with 11-bit or 29-bit
 	RemoteFrame           MessageType = iota // CAN Remote-Transfer-Request Frame (Broadcast from one node to all others)
@@ -13,12 +15,21 @@ const (
 	FDErrorStateIndicator MessageType = iota // Only CANFD
 )
 
+// Bus state
 const (
 	ACTIVE  BusState = iota // read and write
 	PASSIVE BusState = iota // listen-only
 )
 
-// Message CAN message for standard CAN and CAN FD
+// Condition for a single handle
+const (
+	Available   ChannelCondition = iota // Channel is available for a connection
+	Occupied    ChannelCondition = iota // Channel is already occupied by a connection, a connection may be possible depending on interface type
+	Unavailable ChannelCondition = iota // Channel is not available or not connected
+	Invalid     ChannelCondition = iota // Invalid state or not able to retrieve state for this interface
+)
+
+// CAN message for standard CAN and CAN FD
 type Message struct {
 	ID         MessageID
 	Data       []byte
@@ -30,27 +41,28 @@ type Message struct {
 	IsFD       bool        // only set when receiving message
 }
 
-// Bus Interface for all main CANBus functionality. Lower device interfaces may support more functionality
+// Interface for all main CANBus functionality. Lower device interfaces may support more functionality
 type Bus interface {
-	Send(*Message) error
-	Recv(timeout int) (*Message, error)
-	StatusIsOkay() (bool, error)
-	Status() (uint32, error)
-	State() BusState
-	ReadBuffer(limit uint16) ([]Message, error)
-	SetFilter(fromID MessageID, toID MessageID, mode uint8) error
-	Reset() error
-	Shutdown() error
+	Send(*Message) error                                          // Send a single message on the CAN bus
+	Recv(timeout int) (*Message, error)                           // Receive single message from CAN bus with timeout in [ms], a timeout below zero is treated as no timeout
+	StatusIsOkay() (bool, error)                                  // Check function if the connection state is okay
+	Status() (uint32, error)                                      // Returns the CAN status code, which can differ between different devices
+	State() BusState                                              // Returns the bus state (ACTIVE or PASSIVE)
+	ReadBuffer(limit uint16) ([]Message, error)                   // Empties the internal CAN hardware message buffer is device supports this feature with a maximum message count
+	SetFilter(fromID MessageID, toID MessageID, mode uint8) error // Set a message id filter on hardware if supported by device
+	Reset() error                                                 // Reset rx and tx buffer, does not reset hardware
+	Shutdown() error                                              // Disconnect from device
+	ChannelCondition() (ChannelCondition, error)                  // Returns channel condition
 }
 
-// Config CANBus config ready to be read from any json file
+// CANBus config ready to be read from any json file
 type Config struct {
 	BusType          string   `json:"busType"`
 	Channel          string   `json:"channel"`
 	BaudRate         uint32   `json:"baudRate"`
 	BusState         BusState `json:"BusState"`
 	IsFD             bool     `json:"isFD"`
-	FDParameter      string   `json:"Parameter"`       // those parameter are only used if given bus is a FD bus
-	RecvStatusFrames bool     `json:"RecvStatusrames"` // Defines behaviour on receiving status frames; if set to true, status frames can be received on Recv() call, not all CAN drivers might support status frames
-	LogStatusFrames  bool     `json:"LogStatusFrames"` // Defines behaviour on receiving status frames; if set to true, status frames are logged, not all CAN drivers might support status frames
+	FDParameter      string   `json:"Parameter"`        // those parameter are only used if given bus is a FD bus
+	RecvStatusFrames bool     `json:"RecvStatusFrames"` // Defines behaviour on receiving status frames; if set to true, status frames can be received on Recv() call, not all CAN drivers might support status frames
+	LogStatusFrames  bool     `json:"LogStatusFrames"`  // Defines behaviour on receiving status frames; if set to true, status frames are logged, not all CAN drivers might support status frames
 }

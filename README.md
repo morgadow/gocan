@@ -18,11 +18,9 @@ type Bus interface {
 }
 ```
 
-## Supported Interfaces
+## Interfaces
 
-- PEAK Systems PCAN
-
-### Examples
+### PEAK Systems
 
 ```golang
 
@@ -97,11 +95,17 @@ type Bus interface {
   - message DLC now automatically evaluated when sending a message, before this the DLC must be set manually to an non zero value
   - updated README with an changelog section
 
-## Open TODOs
+## Known Issues
+This section lists all known-issues, missing features and open bugs.
 
-- option to create listener for CAN bus connections with different triggers for messages like message id masks, ...
-- PCAN: missing CANFD implementation
-- PCAN: CAN Epoch not set to correct PCAN timestamp, currently set to boot time
-- PCAN: SetValue and GetValue methods are not tested and does not support all types
-- Bus: implement GetAllAvailableHandles function. Maybe there is a convinient API function for devices?
-- every other manufacturer
+### Interfaces
+
+#### PCAN
+
+- Invalid buffer size error in LookupChannel function 
+- FilterMessages function not working correctly; does not apply any filter to the PCAN channel
+- Missing implementation of any trace option
+- Missing implementation of any further filter option as message masks
+- Missing implementation of CANFD functionality due to missing test hardware
+- Evaluation of channel condition propably incorrect as every connection is marked as unavailable
+- Setting parameter as the PCAN_READ_ONLY does not have an impact, reading of message is still possible
