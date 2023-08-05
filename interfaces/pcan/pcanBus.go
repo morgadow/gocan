@@ -8,7 +8,6 @@ import (
 	"unsafe"
 
 	"github.com/morgadow/gocan"
-	log "github.com/sirupsen/logrus"
 )
 
 // defines and singleton values
@@ -246,15 +245,16 @@ func NewPCANBus(config *gocan.Config) (gocan.Bus, error) {
 			return nil, err
 		}
 
-		// set bus state parameter
-		switch config.BusState {
-		case gocan.ACTIVE:
-			err = newBus.SetValue(PCAN_LISTEN_ONLY, uint32(PCAN_PARAMETER_OFF))
-		case gocan.PASSIVE:
-			err = newBus.SetValue(PCAN_LISTEN_ONLY, uint32(PCAN_PARAMETER_ON))
-		default:
-			err = fmt.Errorf("invalid busstate: %v", err)
-		}
+		// set bus parameter depending on config
+		var states = map[gocan.BusState]TPCANParameterValue{gocan.ACTIVE: PCAN_PARAMETER_OFF, gocan.PASSIVE: PCAN_PARAMETER_ON}
+		newBus.SetValue(PCAN_LISTEN_ONLY, uint32(states[config.BusState]))
+
+		// setting for receiving functions
+		var conv = map[bool]TPCANParameterValue{false: PCAN_PARAMETER_OFF, true: PCAN_PARAMETER_ON}
+		newBus.SetValue(PCAN_ALLOW_STATUS_FRAMES, uint32(conv[config.RecvStatusFrames]))
+		newBus.SetValue(PCAN_ALLOW_RTR_FRAMES, uint32(conv[config.RecvRTRFrames]))
+		newBus.SetValue(PCAN_ALLOW_ERROR_FRAMES, uint32(conv[config.RecvErrorFrames]))
+		newBus.SetValue(PCAN_ALLOW_ECHO_FRAMES, uint32(conv[config.RecvEchoFrames]))
 
 		return newBus, err
 	}
@@ -365,10 +365,7 @@ func (p *pcanBus) recvSingleMessage() (TPCANStatus, *gocan.Message, error) {
 	// receive single message, already converted to gocan.Message
 	if p.Config.IsFD {
 		ret, msgFD, timestampFD, err = ReadFD(p.Handle)
-		if msg.MsgType == PCAN_MESSAGE_STATUS && p.Config.LogStatusFrames {
-			log.Warning(getFormattedError(TPCANStatus(msg.Data[PositionStateInDataStatusFrame])))
-		}
-		if err != nil || ret == PCAN_ERROR_QRCVEMPTY || (msg.MsgType == PCAN_MESSAGE_STATUS && !p.Config.RecvStatusFrames) {
+		if err != nil || ret == PCAN_ERROR_QRCVEMPTY {
 			return ret, nil, err
 		}
 		rxDLC = msgFD.DLC
@@ -377,10 +374,8 @@ func (p *pcanBus) recvSingleMessage() (TPCANStatus, *gocan.Message, error) {
 		rxData = msgFD.Data[:getLengthFromDLC(rxDLC)] // only return the suggested message length, even if full message is held in buffer with up to 64 byte
 	} else {
 		ret, msg, timestamp, err = Read(p.Handle)
-		if msg.MsgType == PCAN_MESSAGE_STATUS && p.Config.LogStatusFrames {
-			log.Warning(getFormattedError(TPCANStatus(msg.Data[PositionStateInDataStatusFrame])))
-		}
-		if err != nil || ret == PCAN_ERROR_QRCVEMPTY || (msg.MsgType == PCAN_MESSAGE_STATUS && !p.Config.RecvStatusFrames) {
+
+		if err != nil || ret == PCAN_ERROR_QRCVEMPTY {
 			return ret, nil, err
 		}
 

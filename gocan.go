@@ -63,6 +63,8 @@ type Config struct {
 	BusState         BusState `json:"BusState"`
 	IsFD             bool     `json:"isFD"`
 	FDParameter      string   `json:"Parameter"`        // those parameter are only used if given bus is a FD bus
-	RecvStatusFrames bool     `json:"RecvStatusFrames"` // Defines behaviour on receiving status frames; if set to true, status frames can be received on Recv() call, not all CAN drivers might support status frames
-	LogStatusFrames  bool     `json:"LogStatusFrames"`  // Defines behaviour on receiving status frames; if set to true, status frames are logged, not all CAN drivers might support status frames
+	RecvStatusFrames bool     `json:"RecvStatusFrames"` // If set to true, status frames can be received on Recv() call
+	RecvRTRFrames    bool     `json:"RecvRTRFrames"`    // If set to true, remote transmission frames can be received on Recv() call
+	RecvErrorFrames  bool     `json:"RecvErrorFrames"`  // If set to true, error frames can be received on Recv() call
+	RecvEchoFrames   bool     `json:"RecvEchoFrames"`   // If set to true, echo frames can be received on Recv() call
 }

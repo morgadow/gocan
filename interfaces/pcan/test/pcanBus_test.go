@@ -9,7 +9,7 @@ import (
 )
 
 func auxInitBus(channel string) (gocan.Bus, error) {
-	cfg := gocan.Config{BusType: "pcan", Channel: channel, BaudRate: 500000, BusState: gocan.ACTIVE, IsFD: false, RecvStatusFrames: true, LogStatusFrames: true}
+	cfg := gocan.Config{BusType: "pcan", Channel: channel, BaudRate: 500000, BusState: gocan.ACTIVE}
 	pbus, err := pcan.NewPCANBus(&cfg)
 	return pbus, err
 }
