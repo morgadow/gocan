@@ -95,17 +95,28 @@ type Bus interface {
   - message DLC now automatically evaluated when sending a message, before this the DLC must be set manually to an non zero value
   - updated README with an changelog section
 
+- v1.1.0:
+- internal restructure for PCAN interface
+- added tracing related functions to gocan bus interface and PCAN
+- changed license from MIT to GPLv3
+- added factory function for detecting available handles
+- changed config struct for more receive filtering options 
+
 ## Known Issues
+
 This section lists all known-issues, missing features and open bugs.
 
 ### Interfaces
 
 #### PCAN
 
+- missing documentation examples for new functions
 - Invalid buffer size error in LookupChannel function 
+- error FILE_NOT_FOUND when calling the Shutdown or Uninitialize function: problem probably located in .dll file itself
 - FilterMessages function not working correctly; does not apply any filter to the PCAN channel
 - Missing implementation of any trace option
 - Missing implementation of any further filter option as message masks
 - Missing implementation of CANFD functionality due to missing test hardware
 - Evaluation of channel condition propably incorrect as every connection is marked as unavailable
 - Setting parameter as the PCAN_READ_ONLY does not have an impact, reading of message is still possible
+- Recorded trace files maintain empty even there is traffic on selected CAN bus
