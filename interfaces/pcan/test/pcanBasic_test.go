@@ -28,6 +28,9 @@ func auxInitBasic(channel pcan.TPCANHandle) {
 		fmt.Println(fmt.Errorf("Helper function got error or invalid stats: %v - %w", state, err))
 		panic(err)
 	}
+	state, err = pcan.Uninitialize(pcan.PCAN_USBBUS1)
+	fmt.Println(state)
+	fmt.Println(err)
 }
 
 func auxInitFD(channel pcan.TPCANHandle) {
@@ -262,7 +265,32 @@ func TestFilterMessages(t *testing.T) {
 
 func TestResetFilter(t *testing.T) {
 	t.Errorf("test not implemented")
+}
 
+func TestGetParameter(t *testing.T) {
+	auxInitBasic(pcan.PCAN_USBBUS1)
+	state, val, err := pcan.GetParameter(pcan.PCAN_USBBUS1, pcan.PCAN_CHANNEL_CONDITION)
+	if state != pcan.PCAN_ERROR_OK {
+		t.Errorf("got non okay status code: %x", state)
+	}
+	if err != nil {
+		t.Errorf("got error: %v", err)
+	}
+	if val != pcan.PCAN_CHANNEL_OCCUPIED {
+		t.Errorf("got wrong condition: %v", val)
+	}
+}
+
+func TestSetParameter(t *testing.T) {
+	auxInitBasic(pcan.PCAN_USBBUS1)
+
+	state, err := pcan.SetParameter(pcan.PCAN_USBBUS1, pcan.PCAN_CHANNEL_IDENTIFYING, pcan.PCAN_PARAMETER_ON)
+	if state != pcan.PCAN_ERROR_OK {
+		t.Errorf("got non okay status code: %x", state)
+	}
+	if err != nil {
+		t.Errorf("got error: %v", err)
+	}
 }
 
 func TestGetValue(t *testing.T) {
@@ -281,7 +309,7 @@ func TestGetValue(t *testing.T) {
 
 func TestSetValue(t *testing.T) {
 	auxInitBasic(pcan.PCAN_USBBUS1)
-	state, err := pcan.SetValue(pcan.PCAN_USBBUS1, pcan.PCAN_LISTEN_ONLY, uint32(pcan.PCAN_PARAMETER_ON))
+	state, err := pcan.SetParameter(pcan.PCAN_USBBUS1, pcan.PCAN_LISTEN_ONLY, pcan.PCAN_PARAMETER_ON)
 	if state != pcan.PCAN_ERROR_OK && state != pcan.PCAN_ERROR_BUSLIGHT && state != pcan.PCAN_ERROR_BUSHEAVY {
 		t.Errorf("got non okay status code: %x", state)
 	}

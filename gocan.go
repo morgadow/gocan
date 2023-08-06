@@ -53,6 +53,9 @@ type Bus interface {
 	Reset() error                                                 // Reset rx and tx buffer, does not reset hardware
 	Shutdown() error                                              // Disconnect from device
 	ChannelCondition() (ChannelCondition, error)                  // Returns channel condition
+	TraceSetPath(filePath string) error                           // Sets path for trace file, must be done before starting tracing
+	TraceStart() error                                            // Starts recording a trace; if path was not configured default path is calling script
+	TraceStop() error                                             // Stops recording currently running trace
 }
 
 // CANBus config ready to be read from any json file

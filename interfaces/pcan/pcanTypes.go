@@ -137,15 +137,15 @@ const (
 
 // Represents a PCAN device
 const (
-	PCAN_NONE    = TPCANDevice(0) // Undefined, unknown or not selected PCAN device value
-	PCAN_PEAKCAN = TPCANDevice(1) // PCAN Non-PnP devices. NOT USED WITHIN PCAN-Basic API
-	PCAN_ISA     = TPCANDevice(2) // PCAN-ISA, PCAN-PC/104, and PCAN-PC/104-Plus
-	PCAN_DNG     = TPCANDevice(3) // PCAN-Dongle
-	PCAN_PCI     = TPCANDevice(4) // PCAN-PCI, PCAN-cPCI, PCAN-miniPCI, and PCAN-PCI Express
-	PCAN_USB     = TPCANDevice(5) // PCAN-USB and PCAN-USB Pro
-	PCAN_PCC     = TPCANDevice(6) // PCAN-PC Card
-	PCAN_VIRTUAL = TPCANDevice(7) // PCAN Virtual hardware. NOT USED WITHIN PCAN-Basic API
-	PCAN_LAN     = TPCANDevice(8) // PCAN Gateway devices
+	PCAN_NONE    = TPCANDevice(0x0) // Undefined, unknown or not selected PCAN device value
+	PCAN_PEAKCAN = TPCANDevice(0x1) // PCAN Non-PnP devices. NOT USED WITHIN PCAN-Basic API
+	PCAN_ISA     = TPCANDevice(0x2) // PCAN-ISA, PCAN-PC/104, and PCAN-PC/104-Plus
+	PCAN_DNG     = TPCANDevice(0x3) // PCAN-Dongle
+	PCAN_PCI     = TPCANDevice(0x4) // PCAN-PCI, PCAN-cPCI, PCAN-miniPCI, and PCAN-PCI Express
+	PCAN_USB     = TPCANDevice(0x5) // PCAN-USB and PCAN-USB Pro
+	PCAN_PCC     = TPCANDevice(0x6) // PCAN-PC Card
+	PCAN_VIRTUAL = TPCANDevice(0x7) // PCAN Virtual hardware. NOT USED WITHIN PCAN-Basic API
+	PCAN_LAN     = TPCANDevice(0x8) // PCAN Gateway devices
 )
 
 // Represents a PCAN parameter to be read or set

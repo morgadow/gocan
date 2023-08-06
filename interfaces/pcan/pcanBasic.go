@@ -30,7 +30,7 @@ var pHandleGetErrorText uintptr = 0
 var pHandleLookUpChannel uintptr = 0
 var apiLoaded bool
 
-// LoadAPI Loads PCAN API (.ddl) file
+// Loads PCAN API (.ddl) file
 func LoadAPI() error {
 	var err error = nil
 	var dll = ""
@@ -75,7 +75,7 @@ func LoadAPI() error {
 	return nil
 }
 
-// UnloadAPI Unloads PCAN API (.ddl) file
+// Unloads PCAN API (.ddl) file
 func UnloadAPI() error {
 
 	// reset pointers
@@ -100,7 +100,7 @@ func UnloadAPI() error {
 	return err
 }
 
-// Initialize Initializes a PCAN Channel
+// Initializes a PCAN Channel
 // Channel: The handle of a PCAN Channel
 // baudRate: The speed for the communication (BTR0BTR1 code)
 // hwType: Non-PnP: The type of hardware and operation mode
@@ -111,7 +111,7 @@ func Initialize(channel TPCANHandle, baudRate TPCANBaudrate, hwType TPCANType, i
 	return TPCANStatus(ret), sysCallErr(errCall)
 }
 
-// InitializeFD Initializes a FD capable PCAN Channel
+// Initializes a FD capable PCAN Channel
 // Channel: The handle of a PCAN Channel
 // bitRateFD: The speed for the communication (FD bit rate string)
 // Note:
@@ -127,28 +127,28 @@ func InitializeFD(channel TPCANHandle, bitRateFD TPCANBitrateFD) (TPCANStatus, e
 	return TPCANStatus(ret), sysCallErr(errCall)
 }
 
-// Uninitialize Uninitializes PCAN Channels initialized by CAN_Initialize
+// Uninitializes PCAN Channels initialized by CAN_Initialize
 // Channel: The handle of a PCAN Channel
 func Uninitialize(channel TPCANHandle) (TPCANStatus, error) {
 	ret, _, errCall := syscall.SyscallN(pHandleUninitialize, uintptr(channel))
 	return TPCANStatus(ret), sysCallErr(errCall)
 }
 
-// Reset Resets the receive and transmit queues of the PCAN Channel
+// Resets the receive and transmit queues of the PCAN Channel
 // Channel: The handle of a PCAN Channel
 func Reset(channel TPCANHandle) (TPCANStatus, error) {
 	ret, _, errCall := syscall.SyscallN(pHandleReset, uintptr(channel))
 	return TPCANStatus(ret), sysCallErr(errCall)
 }
 
-// GetStatus Gets the current status of a PCAN Channel
+// Gets the current status of a PCAN Channel
 // Channel: The handle of a PCAN Channel
 func GetStatus(channel TPCANHandle) (TPCANStatus, error) {
 	ret, _, errCall := syscall.SyscallN(pHandleGetStatus, uintptr(channel))
 	return TPCANStatus(ret), sysCallErr(errCall)
 }
 
-// Read Reads a CAN message from the receive queue of a PCAN Channel
+// Reads a CAN message from the receive queue of a PCAN Channel
 // Channel: The handle of a PCAN Channel
 func Read(channel TPCANHandle) (TPCANStatus, TPCANMsg, TPCANTimestamp, error) {
 	var msg TPCANMsg
@@ -158,7 +158,7 @@ func Read(channel TPCANHandle) (TPCANStatus, TPCANMsg, TPCANTimestamp, error) {
 	return TPCANStatus(ret), msg, timeStamp, sysCallErr(errCall)
 }
 
-// ReadFD Reads a CAN message from the receive queue of a FD capable PCAN Channel
+// Reads a CAN message from the receive queue of a FD capable PCAN Channel
 // Channel: The handle of a PCAN Channel
 func ReadFD(channel TPCANHandle) (TPCANStatus, TPCANMsgFD, TPCANTimestampFD, error) {
 	var msgFD TPCANMsgFD
@@ -168,7 +168,7 @@ func ReadFD(channel TPCANHandle) (TPCANStatus, TPCANMsgFD, TPCANTimestampFD, err
 	return TPCANStatus(ret), msgFD, timeStampFD, sysCallErr(errCall)
 }
 
-// Write Transmits a CAN message
+// Transmits a CAN message
 // Channel: The handle of a PCAN Channel
 // msg: A Message struct with the message to be sent
 func Write(channel TPCANHandle, msg TPCANMsg) (TPCANStatus, error) {
@@ -176,7 +176,7 @@ func Write(channel TPCANHandle, msg TPCANMsg) (TPCANStatus, error) {
 	return TPCANStatus(ret), sysCallErr(errCall)
 }
 
-// WriteFD Transmits a CAN message over a FD capable PCAN Channel
+// Transmits a CAN message over a FD capable PCAN Channel
 // Channel: The handle of a PCAN Channel
 // msgFD A MessageFD struct with the message to be sent
 func WriteFD(channel TPCANHandle, msgFD TPCANMsgFD) (TPCANStatus, error) {
@@ -184,7 +184,7 @@ func WriteFD(channel TPCANHandle, msgFD TPCANMsgFD) (TPCANStatus, error) {
 	return TPCANStatus(ret), sysCallErr(errCall)
 }
 
-// FilterMessages Configures the reception filter
+// Configures the reception filter
 // Channel: The handle of a PCAN Channel
 // fromID: The lowest CAN ID to be received
 // toID: The highest CAN ID to be received
@@ -194,37 +194,56 @@ func FilterMessages(channel TPCANHandle, fromID TPCANMsgID, toID TPCANMsgID, mod
 	return TPCANStatus(ret), sysCallErr(errCall)
 }
 
-// Resets the filter applied to handle
+// the filter applied to handle
 func ResetFilter(channel TPCANHandle) (TPCANStatus, error) {
 	return PCAN_ERROR_OK, nil
 }
 
-// GetValue Retrieves a PCAN Channel value
+// Retrieves a PCAN Channel value using a defined parameter value type
+// Channel: The handle of a PCAN Channel
+// param: The TPCANParameter parameter to get
+// Note: Parameters can be present or not according with the kind of Hardware (PCAN Channel) being used.
+// If a parameter is not available, a PCAN_ERROR_ILLPARAMTYPE error will be returned
+func GetParameter(channel TPCANHandle, param TPCANParameter) (TPCANStatus, TPCANParameterValue, error) {
+	var val TPCANParameterValue
+	ret, err := GetValue(channel, param, unsafe.Pointer(&val), uint32(unsafe.Sizeof(val)))
+	return TPCANStatus(ret), val, err
+}
+
+// Configures a PCAN Channel value using a defined parameter value type
+// Channel: The handle of a PCAN Channel
+// param: The TPCANParameter parameter to set
+// value: Value of parameter
+// Note: Parameters can be present or not according with the kind of Hardware (PCAN Channel) being used.
+// If a parameter is not available, a PCAN_ERROR_ILLPARAMTYPE error will be returned
+func SetParameter(channel TPCANHandle, param TPCANParameter, val TPCANParameterValue) (TPCANStatus, error) {
+	ret, err := SetValue(channel, param, unsafe.Pointer(&val), unsafe.Sizeof(val))
+	return TPCANStatus(ret), err
+}
+
+// Retrieves a PCAN Channel value
 // Channel: The handle of a PCAN Channel
 // param: The TPCANParameter parameter to get
 // Note: Parameters can be present or not according with the kind
-//
-//	of Hardware (PCAN Channel) being used. If a parameter is not available,
-//	a PCAN_ERROR_ILLPARAMTYPE error will be returned
-func GetValue(channel TPCANHandle, param TPCANParameter, buffer unsafe.Pointer, bufferSize uint32) (TPCANStatus, error) {
+// Note: Parameters can be present or not according with the kind of Hardware (PCAN Channel) being used.
+// If a parameter is not available, a PCAN_ERROR_ILLPARAMTYPE error will be returned
+func GetValue(channel TPCANHandle, param TPCANParameter, buffer unsafe.Pointer, bufferSize uint32) (TPCANStatus, error) { // TODO change buffersize to uintptr
 	ret, _, errCall := syscall.SyscallN(pHandleGetValue, uintptr(channel), uintptr(param), uintptr(buffer), uintptr(bufferSize))
 	return TPCANStatus(ret), sysCallErr(errCall)
 }
 
-// SetValue Configures a PCAN Channel value.
+// Configures a PCAN Channel value.
 // Channel: The handle of a PCAN Channel
 // param: The TPCANParameter parameter to set
 // value: Value of parameter
-// Note: Parameters can be present or not according with the kind
-//
-//	of Hardware (PCAN Channel) being used. If a parameter is not available,
-//	a PCAN_ERROR_ILLPARAMTYPE error will be returned.
-func SetValue(channel TPCANHandle, param TPCANParameter, value uint32) (TPCANStatus, error) {
-	ret, _, errCall := syscall.SyscallN(pHandleSetValue, uintptr(channel), uintptr(param), uintptr(unsafe.Pointer(&value)), unsafe.Sizeof(value))
+// Note: Parameters can be present or not according with the kind of Hardware (PCAN Channel) being used.
+// If a parameter is not available, a PCAN_ERROR_ILLPARAMTYPE error will be returned
+func SetValue(channel TPCANHandle, param TPCANParameter, buffer unsafe.Pointer, bufferSize uintptr) (TPCANStatus, error) {
+	ret, _, errCall := syscall.SyscallN(pHandleSetValue, uintptr(channel), uintptr(param), uintptr(buffer), bufferSize)
 	return TPCANStatus(ret), sysCallErr(errCall)
 }
 
-// GetErrorText Returns a descriptive text of a given TPCANStatus error code, in any desired language
+// Returns a descriptive text of a given TPCANStatus error code, in any desired language
 // err: A TPCANStatus error code
 // language: Indicates a 'Primary language ID'
 func GetErrorText(status TPCANStatus, language TPCANLanguage) (TPCANStatus, [256]byte, error) {
@@ -234,7 +253,7 @@ func GetErrorText(status TPCANStatus, language TPCANLanguage) (TPCANStatus, [256
 	return TPCANStatus(ret), buffer, sysCallErr(errCall)
 }
 
-// LookUpChannel Finds a PCAN-Basic Channel that matches with the given parameters
+// Finds a PCAN-Basic Channel that matches with the given parameters
 // parameters: A comma separated string contained pairs of parameter-name/value to be matched within a PCAN-Basic Channel
 // foundChannels: Buffer for returning the PCAN-Basic Channel when found
 func LookUpChannel(deviceType string, deviceID string, controllerNumber string, ipAdress string) (TPCANStatus, TPCANHandle, error) {

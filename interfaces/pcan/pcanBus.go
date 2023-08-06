@@ -20,7 +20,7 @@ var hasEvents = true                     // indicates if WaitForSingleObject can
 var ErrInvalidChannel = errors.New("invalid channel selected")
 var ErrInvalidBaudRate = errors.New("invalid baudrate selected")
 
-// NumberToBaudrate All available standard baud rates for PCAN Channels (defining custom is theoretically possible)
+// All available standard baud rates for PCAN Channels (defining custom is theoretically possible)
 // Defined this way to improve config file suppport
 var IntToBaudrate = map[uint32]TPCANBaudrate{
 	1000000: PCAN_BAUD_1M,
@@ -55,7 +55,7 @@ var BaudrateToInt = map[TPCANBaudrate]uint32{
 	PCAN_BAUD_5K:   5000,
 }
 
-// StringToChannel All available PCAN Channels
+// All available PCAN Channels
 // Defined this way to improve config file suppport
 var StringToChannel = map[string]TPCANHandle{
 	"PCAN_NONEBUS": PCAN_NONEBUS,
@@ -188,7 +188,7 @@ var ChannelToString = map[TPCANHandle]string{
 	PCAN_LANBUS16: "PCAN_LANBUS16",
 }
 
-// CAN_FD_DLC List of valid data lengths for a CAN FD message
+// List of valid data lengths for a CAN FD message
 var CAN_FD_DLC = [...]uint8{0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64}
 
 // pcanBus PCAN BusIf capable of sending and reading CAN messages
@@ -203,7 +203,7 @@ type pcanBus struct {
 	recvEvent syscall.Handle
 }
 
-// NewPCANBus Convenient method for creating and initiating a pcanBus with multiple default parameters channel
+// Convenient method for creating and initiating a pcanBus with multiple default parameters channel
 func NewPCANBus(config *gocan.Config) (gocan.Bus, error) {
 
 	var baud TPCANBaudrate
@@ -247,20 +247,20 @@ func NewPCANBus(config *gocan.Config) (gocan.Bus, error) {
 
 		// set bus parameter depending on config
 		var states = map[gocan.BusState]TPCANParameterValue{gocan.ACTIVE: PCAN_PARAMETER_OFF, gocan.PASSIVE: PCAN_PARAMETER_ON}
-		newBus.SetValue(PCAN_LISTEN_ONLY, uint32(states[config.BusState]))
+		SetParameter(newBus.Handle, PCAN_LISTEN_ONLY, states[config.BusState])
 
 		// setting for receiving functions
 		var conv = map[bool]TPCANParameterValue{false: PCAN_PARAMETER_OFF, true: PCAN_PARAMETER_ON}
-		newBus.SetValue(PCAN_ALLOW_STATUS_FRAMES, uint32(conv[config.RecvStatusFrames]))
-		newBus.SetValue(PCAN_ALLOW_RTR_FRAMES, uint32(conv[config.RecvRTRFrames]))
-		newBus.SetValue(PCAN_ALLOW_ERROR_FRAMES, uint32(conv[config.RecvErrorFrames]))
-		newBus.SetValue(PCAN_ALLOW_ECHO_FRAMES, uint32(conv[config.RecvEchoFrames]))
+		SetParameter(newBus.Handle, PCAN_ALLOW_STATUS_FRAMES, conv[config.RecvStatusFrames])
+		SetParameter(newBus.Handle, PCAN_ALLOW_RTR_FRAMES, conv[config.RecvRTRFrames])
+		SetParameter(newBus.Handle, PCAN_ALLOW_ERROR_FRAMES, conv[config.RecvErrorFrames])
+		SetParameter(newBus.Handle, PCAN_ALLOW_ECHO_FRAMES, conv[config.RecvEchoFrames])
 
 		return newBus, err
 	}
 }
 
-// Initialize Initializes PCANStandardBus channel
+// Initializes PCANStandardBus channel
 func (p *pcanBus) Initialize() error {
 
 	var ret = PCAN_ERROR_UNKNOWN
@@ -286,7 +286,7 @@ func (p *pcanBus) Initialize() error {
 			r0, _, errno := syscall.SyscallN(procCreateEvent)
 			if errno == 0 && r0 != 0 && syscall.Handle(r0) != syscall.InvalidHandle {
 				p.recvEvent = syscall.Handle(r0)
-				retVal, errVal := SetValue(p.Handle, PCAN_RECEIVE_EVENT, uint32(r0))
+				retVal, errVal := SetParameter(p.Handle, PCAN_RECEIVE_EVENT, TPCANParameterValue(r0))
 				if retVal != PCAN_ERROR_OK || errVal != nil {
 					hasEvents = false
 					_ = syscall.CloseHandle(p.recvEvent)
@@ -303,7 +303,7 @@ func (p *pcanBus) Initialize() error {
 	return nil
 }
 
-// Recv Returns message from PCANStandardBus
+// Returns message from PCANStandardBus
 // timeout: Timeout for receiving message from CAN bus in milliseconds (if set below zero, no timeout is set)
 func (p *pcanBus) Recv(timeout int) (*gocan.Message, error) {
 
@@ -346,7 +346,7 @@ func (p *pcanBus) Recv(timeout int) (*gocan.Message, error) {
 	return msg, err
 }
 
-// recvSingleMessage Reads single message from PCAN CAN gocan.
+// Reads single message from PCAN CAN gocan.
 func (p *pcanBus) recvSingleMessage() (TPCANStatus, *gocan.Message, error) {
 
 	var newMsg gocan.Message
@@ -413,7 +413,7 @@ func (p *pcanBus) recvSingleMessage() (TPCANStatus, *gocan.Message, error) {
 	return ret, &newMsg, nil
 }
 
-// Send Sends message over PCAN channel
+// Sends message over PCAN channel
 func (p *pcanBus) Send(msg *gocan.Message) error {
 
 	var ret = PCAN_ERROR_UNKNOWN
@@ -449,24 +449,24 @@ func (p *pcanBus) Send(msg *gocan.Message) error {
 	return evalRetval(ret, err)
 }
 
-// StatusIsOkay Convenient function to check PCANStandardBus for PCAN_ERROR_OK Status, other bus errors are ignored
+// Convenient function to check PCANStandardBus for PCAN_ERROR_OK Status, other bus errors are ignored
 func (p *pcanBus) StatusIsOkay() (bool, error) {
 	ret, err := GetStatus(p.Handle)
 	return ret == PCAN_ERROR_OK, err
 }
 
-// Status Returns Status of PCANStandardBus channel
+// Returns Status of PCANStandardBus channel
 func (p *pcanBus) Status() (uint32, error) {
 	state, err := GetStatus(p.Handle)
 	return uint32(state), evalRetval(state, err)
 }
 
-// State Returns State of PCANStandardBus channel
+// Returns State of PCANStandardBus channel
 func (p *pcanBus) State() gocan.BusState {
 	return p.Config.BusState
 }
 
-// ReadBuffer Reads from device buffer until it has no more messages stored with an optional message limit
+// Reads from device buffer until it has no more messages stored with an optional message limit
 // If limit is set to zero, no limit will will be used
 func (p *pcanBus) ReadBuffer(limit uint16) ([]gocan.Message, error) {
 
@@ -490,32 +490,44 @@ func (p *pcanBus) ReadBuffer(limit uint16) ([]gocan.Message, error) {
 	}
 }
 
-// GetValue Retrieves a TPCANParameter value from channel or device
+// Retrieves a TPCANParameter value from channel or device (only work for simple parameters)
+func (p *pcanBus) GetParameter(param TPCANParameter) (TPCANParameterValue, error) {
+	state, val, err := GetParameter(p.Handle, param)
+	return val, evalRetval(state, err)
+}
+
+// Configures a TPCANParameter from channel or device (only work for simple parameters)
+func (p *pcanBus) SetParameter(param TPCANParameter, val TPCANParameterValue) error {
+	state, err := SetParameter(p.Handle, param, val)
+	return evalRetval(state, err)
+}
+
+// Retrieves a TPCANParameter value from channel or device
 func (p *pcanBus) GetValue(param TPCANParameter) (uint32, error) {
 	var buf uint32
 	state, err := GetValue(p.Handle, param, unsafe.Pointer(&buf), uint32(unsafe.Sizeof(buf)))
 	return buf, evalRetval(state, err)
 }
 
-// SetValue Configures a TPCANParameter from channel or device
-func (p *pcanBus) SetValue(param TPCANParameter, value uint32) error {
-	state, err := SetValue(p.Handle, param, value)
+// Configures a TPCANParameter from channel or device
+func (p *pcanBus) SetValue(param TPCANParameter, val TPCANParameterValue) error {
+	state, err := SetParameter(p.Handle, param, val)
 	return evalRetval(state, err)
 }
 
-// FilterMessages Apply message filter to PCANStandardBus channel
+// Apply message filter to PCANStandardBus channel
 func (p *pcanBus) SetFilter(fromID gocan.MessageID, toID gocan.MessageID, mode uint8) error {
 	state, err := FilterMessages(p.Handle, TPCANMsgID(fromID), TPCANMsgID(toID), TPCANMode(mode))
 	return evalRetval(state, err)
 }
 
-// Reset Resets PCANStandardBus in order to gain PCAN_ERROR_OK Status
+// Resets PCANStandardBus in order to gain PCAN_ERROR_OK Status
 func (p *pcanBus) Reset() error {
 	state, err := Reset(p.Handle)
 	return evalRetval(state, err)
 }
 
-// Shutdown Shuts channel down and closes connection
+// Shuts channel down and closes connection
 func (p *pcanBus) Shutdown() error {
 
 	state, err := Uninitialize(p.Handle)
@@ -525,16 +537,35 @@ func (p *pcanBus) Shutdown() error {
 	return evalRetval(state, err)
 }
 
-// FlashLED Turn on or off flashing of the device's LED for physical identification purposes
-func (p *pcanBus) SetLEDState(state bool) error {
-	val := 0
-	if state {
-		val = 1
+// Turn on or off flashing of the device's LED for physical identification purposes
+func (p *pcanBus) SetLEDState(ledState bool) error {
+	val := PCAN_PARAMETER_OFF
+	if ledState {
+		val = PCAN_PARAMETER_ON
 	}
-	return p.SetValue(PCAN_CHANNEL_IDENTIFYING, uint32(val))
+	state, err := SetParameter(p.Handle, PCAN_CHANNEL_IDENTIFYING, val)
+	return evalRetval(state, err)
 }
 
-// GetChannelCondition Returns the channel condition as a level for availablity
+// Returns the channel condition as a level for availablity
+func (p *pcanBus) ChannelCondition2() (gocan.ChannelCondition, error) {
+	var cond gocan.ChannelCondition = gocan.Invalid
+	state, val, err := GetParameter(p.Handle, PCAN_CHANNEL_CONDITION)
+
+	if (val & PCAN_CHANNEL_AVAILABLE) == PCAN_CHANNEL_AVAILABLE {
+		cond = gocan.Available
+	} else if (val & PCAN_CHANNEL_OCCUPIED) == PCAN_CHANNEL_OCCUPIED {
+		cond = gocan.Occupied
+	} else if (val & PCAN_CHANNEL_PCANVIEW) == PCAN_CHANNEL_PCANVIEW {
+		cond = gocan.Occupied
+	} else if (val & PCAN_CHANNEL_UNAVAILABLE) == PCAN_CHANNEL_UNAVAILABLE {
+		cond = gocan.Unavailable
+	}
+
+	return cond, evalRetval(state, err)
+}
+
+// Returns the channel condition as a level for availablity
 func (p *pcanBus) ChannelCondition() (gocan.ChannelCondition, error) {
 	var buf uint32
 	var cond gocan.ChannelCondition = gocan.Invalid
@@ -553,13 +584,44 @@ func (p *pcanBus) ChannelCondition() (gocan.ChannelCondition, error) {
 	return cond, evalRetval(state, err)
 }
 
-// UninitializeAllChannels Uninitializes all PCAN Channels initialized by CAN_Initialize
+// Sets path for trace file, must be done before starting tracing
+func (p *pcanBus) TraceSetPath(filePath string) error {
+	if len(filePath) > syscall.MAX_PATH {
+		return fmt.Errorf("filepath exceeds max length of %v", syscall.MAX_PATH)
+	}
+
+	// convert path to a fixed buffer size as pcan wants it that way
+	var path [syscall.MAX_PATH]rune
+	for i := range filePath {
+		path[i] = rune(filePath[i])
+	}
+
+	// define trace location
+	paths := string(path[:])
+	sizePath := unsafe.Sizeof(paths) * uintptr(len(paths))
+	state, err := SetValue(p.Handle, PCAN_TRACE_LOCATION, unsafe.Pointer(&paths), sizePath)
+	return evalRetval(state, err)
+}
+
+// Starts recording a trace on given location
+func (p *pcanBus) TraceStart() error {
+	state, err := SetParameter(p.Handle, PCAN_TRACE_STATUS, PCAN_PARAMETER_ON)
+	return evalRetval(state, err)
+}
+
+// Stops recording currently running trace
+func (p *pcanBus) TraceStop() error {
+	state, err := SetParameter(p.Handle, PCAN_TRACE_STATUS, PCAN_PARAMETER_OFF)
+	return evalRetval(state, err)
+}
+
+// Uninitializes all PCAN Channels initialized by CAN_Initialize
 func ShutdownAllHandles() error {
 	state, err := Uninitialize(PCAN_NONEBUS)
 	return evalRetval(state, err)
 }
 
-// AttachedChannels Returns list of all existing PCAN channels on a system in a single call, regardless of their current availability
+// Returns list of all existing PCAN channels on a system in a single call, regardless of their current availability
 func AttachedChannels() ([]TPCANChannelInformation, error) {
 	count, err := AttachedChannelsCount()
 	if err != nil || count == 0 { // size calculation not possible with a slice len of 0
@@ -573,7 +635,7 @@ func AttachedChannels() ([]TPCANChannelInformation, error) {
 	return buf, evalRetval(state, err)
 }
 
-// AttachedChannels Returns list of all existing PCAN channels on a system in a single call, regardless of their current availability
+// Returns list of all existing PCAN channels on a system in a single call, regardless of their current availability
 func AttachedChannelsNames() ([]string, error) {
 	count, err := AttachedChannelsCount()
 	if err != nil || count == 0 { // size calculation not possible with a slice len of 0
@@ -592,7 +654,7 @@ func AttachedChannelsNames() ([]string, error) {
 	return channels, evalRetval(state, err)
 }
 
-// AttachedChannelsCount Gets information about all existing PCAN channels on a system in a single call, regardless of their current availability.
+// Gets information about all existing PCAN channels on a system in a single call, regardless of their current availability.
 func AttachedChannelsCount() (uint32, error) {
 	var channelCount uint32
 	ret, err := GetValue(PCAN_NONEBUS, PCAN_ATTACHED_CHANNELS_COUNT, unsafe.Pointer(&channelCount), uint32(unsafe.Sizeof(channelCount)))
@@ -602,7 +664,7 @@ func AttachedChannelsCount() (uint32, error) {
 	return channelCount, getFormattedError(ret)
 }
 
-// getFormattedError Uses the API function to get string description for any TPCANStatus
+// Uses the API function to get string description for any TPCANStatus
 // status: PCAN Status returned from api
 func getFormattedError(status TPCANStatus) error {
 
@@ -629,7 +691,7 @@ func getFormattedError(status TPCANStatus) error {
 	return errors.New(string(buffer[:numBytes]))
 }
 
-// evalRetval: function handles the API return bus state and error and evaluates final error
+// helper function handles the API return bus state and error and evaluates final error
 // status: PCAN Status returned from api
 // err: error returned from api and syscall
 func evalRetval(status TPCANStatus, err error) error {
