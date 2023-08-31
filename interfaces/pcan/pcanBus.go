@@ -197,9 +197,9 @@ type pcanBus struct {
 	Handle    TPCANHandle
 	Bitrate   TPCANBaudrate  // only set if not a FD channel
 	BitrateFD TPCANBitrateFD // only set if a FD channel
-	HWType    TPCANType
-	IOPort    uint32
-	Interrupt uint16
+	HWType    TPCANType      // only for non plug´n´play devices // TODO remove from call and use easy plug'n'play version https://documentation.help/PCAN-Basic/
+	IOPort    uint32         // only for non plug´n´play devices // TODO remove from call and use easy plug'n'play version https://documentation.help/PCAN-Basic/
+	Interrupt uint16         // only for non plug´n´play devices // TODO remove from call and use easy plug'n'play version https://documentation.help/PCAN-Basic/
 	recvEvent syscall.Handle
 }
 
@@ -584,28 +584,39 @@ func (p *pcanBus) ChannelCondition() (gocan.ChannelCondition, error) {
 	return cond, evalRetval(state, err)
 }
 
-// Sets path for trace file, must be done before starting tracing
-func (p *pcanBus) TraceSetPath(filePath string) error {
-	if len(filePath) > syscall.MAX_PATH {
-		return fmt.Errorf("filepath exceeds max length of %v", syscall.MAX_PATH)
+// Starts recording a trace on given location
+// maxFileSize: trace file is splitted in files with this maximum size of file in MB; set to zero to have a infinite large trace file
+func (p *pcanBus) TraceStart(filePath string, maxFileSize int) error {
+
+	// configure trace configuration (only file size is set, the other options are always used)
+	cfg := TRACE_FILE_DATE | TRACE_FILE_TIME | TRACE_FILE_OVERWRITE
+	if maxFileSize > 0 {
+		cfg |= TRACE_FILE_SEGMENTED
+	} else {
+		cfg |= TRACE_FILE_SINGLE
+	}
+	state, err := SetParameter(p.Handle, PCAN_TRACE_CONFIGURE, cfg)
+	if err != nil || state != PCAN_ERROR_OK {
+		return evalRetval(state, err)
+	}
+
+	// configure trace file path
+	if len(filePath) > MAX_LENGHT_STRING_BUFFER {
+		return fmt.Errorf("filepath exceeds max length of %v", MAX_LENGHT_STRING_BUFFER)
 	}
 
 	// convert path to a fixed buffer size as pcan wants it that way
-	var path [syscall.MAX_PATH]rune
+	var buffer [MAX_LENGHT_STRING_BUFFER]byte
 	for i := range filePath {
-		path[i] = rune(filePath[i])
+		buffer[i] = byte(filePath[i])
+	}
+	state, err = SetValue(p.Handle, PCAN_TRACE_LOCATION, unsafe.Pointer(&buffer), unsafe.Sizeof(buffer))
+	if err != nil || state != PCAN_ERROR_OK {
+		return evalRetval(state, err)
 	}
 
-	// define trace location
-	paths := string(path[:])
-	sizePath := unsafe.Sizeof(paths) * uintptr(len(paths))
-	state, err := SetValue(p.Handle, PCAN_TRACE_LOCATION, unsafe.Pointer(&paths), sizePath)
-	return evalRetval(state, err)
-}
-
-// Starts recording a trace on given location
-func (p *pcanBus) TraceStart() error {
-	state, err := SetParameter(p.Handle, PCAN_TRACE_STATUS, PCAN_PARAMETER_ON)
+	// start tracing
+	state, err = SetParameter(p.Handle, PCAN_TRACE_STATUS, PCAN_PARAMETER_ON)
 	return evalRetval(state, err)
 }
 

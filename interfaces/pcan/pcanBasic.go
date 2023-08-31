@@ -246,8 +246,8 @@ func SetValue(channel TPCANHandle, param TPCANParameter, buffer unsafe.Pointer, 
 // Returns a descriptive text of a given TPCANStatus error code, in any desired language
 // err: A TPCANStatus error code
 // language: Indicates a 'Primary language ID'
-func GetErrorText(status TPCANStatus, language TPCANLanguage) (TPCANStatus, [256]byte, error) {
-	var buffer [256]byte
+func GetErrorText(status TPCANStatus, language TPCANLanguage) (TPCANStatus, [MAX_LENGHT_STRING_BUFFER]byte, error) {
+	var buffer [MAX_LENGHT_STRING_BUFFER]byte
 
 	ret, _, errCall := syscall.SyscallN(pHandleGetErrorText, uintptr(status), uintptr(language), uintptr(unsafe.Pointer(&buffer)))
 	return TPCANStatus(ret), buffer, sysCallErr(errCall)

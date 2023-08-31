@@ -115,10 +115,9 @@ This section lists all known-issues, missing features and open bugs.
 #### PCAN
 
 - missing documentation examples for new functions
-- Invalid buffer size error in LookupChannel function 
+- Invalid buffer size error in LookupChannel function
 - error FILE_NOT_FOUND when calling the Shutdown or Uninitialize function: problem probably located in .dll file itself
 - FilterMessages function not working correctly; does not apply any filter to the PCAN channel
-- Missing implementation of any trace option
 - Missing implementation of any further filter option as message masks
 - Missing implementation of CANFD functionality due to missing test hardware
 - Evaluation of channel condition propably incorrect as every connection is marked as unavailable

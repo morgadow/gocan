@@ -16,8 +16,9 @@ type TPCANBitrateFD string       // Represents a PCAN-FD bit rate string
 type TPCANMsgID uint32           // 11/29-bit message identifier
 type TPCANTimestampFD uint64     // Represents a timestamp of a received PCAN FD message
 
-const MAX_LENGTH_HARDWARE_NAME = 33   // Maximum length of the name of a device: 32 characters + terminator
-const MAX_LENGTH_VERSION_STRING = 256 // Maximum length of a version string: 255 characters + terminator
+const MAX_LENGTH_HARDWARE_NAME = 33                        // Maximum length of the name of a device: 32 characters + terminator
+const MAX_LENGHT_STRING_BUFFER = 256                       // Maximum length of any string buffer sent or received from pcan dll
+const MAX_LENGTH_VERSION_STRING = MAX_LENGHT_STRING_BUFFER // Maximum length of a version string: 255 characters + terminator
 
 const LENGTH_DATA_CAN_MESSAGE = 8    // maximum amount of bytes in an PCAN CAN message  // todo private?
 const LENGTH_DATA_CANFD_MESSAGE = 64 // maximum amount of bytes in can CAN FD message  // todo private?

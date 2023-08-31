@@ -3,7 +3,6 @@ package test
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/morgadow/gocan"
 	"github.com/morgadow/gocan/interfaces/pcan"
@@ -36,30 +35,18 @@ func TestChannelCondition(t *testing.T) {
 	fmt.Println(cond)
 }
 
-func TestTraceSetPath(t *testing.T) {
-	pbus, err := auxInitBus("PCAN_USBBUS1")
-	if err != nil {
-		t.Errorf("error while creating bus: %v", err)
-	}
-
-	path := "C:/workspace/go/src/github.com/morgadow"
-	err = pbus.TraceSetPath(path)
-	if err != nil {
-		t.Errorf("error setting trace path: %v", err)
-	}
-}
-
 func TestTraceStart(t *testing.T) {
 	pbus, err := auxInitBus("PCAN_USBBUS1")
 	if err != nil {
 		t.Errorf("error while creating bus: %v", err)
 	}
 
-	err = pbus.TraceStart()
+	tracePath := "C:/workspace/go/src/github.com/morgadow"
+	fileSize := 100
+	err = pbus.TraceStart(tracePath, fileSize)
 	if err != nil {
 		t.Errorf("error while starting trace: %v", err)
 	}
-	time.Sleep(5 * time.Second)
 
 	err = pbus.TraceStop()
 	if err != nil {
