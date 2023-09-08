@@ -13,61 +13,61 @@ const driverLinux = "libpcanbasic.so" // PCAN linux driver file name, which can 
 
 var ErrAPINotLoadedOrFound = errors.New("pcan api not loaded or installed, please load api over pcan.LoadAPI")
 
-var pcanAPIHandle syscall.Handle = 0 // process handle for PCAN driver
-var pHandleInitialize uintptr = 0
-var pHandleInitializeFD uintptr = 0
-var pHandleUninitialize uintptr = 0
-var pHandleReset uintptr = 0
-var pHandleGetStatus uintptr = 0
-var pHandleRead uintptr = 0
-var pHandleReadFD uintptr = 0
-var pHandleWrite uintptr = 0
-var pHandleWriteFD uintptr = 0
-var pHandleFilterMessages uintptr = 0
-var pHandleGetValue uintptr = 0
-var pHandleSetValue uintptr = 0
-var pHandleGetErrorText uintptr = 0
-var pHandleLookUpChannel uintptr = 0
+var pcanAPIHandle *syscall.DLL = nil // procedure handle for PCAN driver
+var pHandleInitialize *syscall.Proc = nil
+var pHandleInitializeFD *syscall.Proc = nil
+var pHandleUninitialize *syscall.Proc = nil
+var pHandleReset *syscall.Proc = nil
+var pHandleGetStatus *syscall.Proc = nil
+var pHandleRead *syscall.Proc = nil
+var pHandleReadFD *syscall.Proc = nil
+var pHandleWrite *syscall.Proc = nil
+var pHandleWriteFD *syscall.Proc = nil
+var pHandleFilterMessages *syscall.Proc = nil
+var pHandleGetValue *syscall.Proc = nil
+var pHandleSetValue *syscall.Proc = nil
+var pHandleGetErrorText *syscall.Proc = nil
+var pHandleLookUpChannel *syscall.Proc = nil
 var apiLoaded bool
 
 // Loads PCAN API (.ddl) file
 func LoadAPI() error {
 	var err error = nil
-	var dll = ""
+	var driver = ""
 
 	// evaluate operating system and architecture and select driver file
 	switch runtime.GOOS {
 	case "windows":
-		dll = driverWin
+		driver = driverWin
 	case "darwin":
-		dll = driverMac
+		driver = driverMac
 	default:
-		dll = driverLinux
+		driver = driverLinux
 	}
 
-	pcanAPIHandle, err = syscall.LoadLibrary(dll)
-	if err != nil {
+	pcanAPIHandle, err = syscall.LoadDLL(driver)
+	if err != nil || pcanAPIHandle == nil {
 		return err
 	}
 
-	pHandleInitialize, _ = syscall.GetProcAddress(pcanAPIHandle, "CAN_Initialize")
-	pHandleInitializeFD, _ = syscall.GetProcAddress(pcanAPIHandle, "CAN_InitializeFD")
-	pHandleUninitialize, _ = syscall.GetProcAddress(pcanAPIHandle, "CAN_Uninitialize")
-	pHandleReset, _ = syscall.GetProcAddress(pcanAPIHandle, "CAN_Reset")
-	pHandleGetStatus, _ = syscall.GetProcAddress(pcanAPIHandle, "CAN_GetStatus")
-	pHandleRead, _ = syscall.GetProcAddress(pcanAPIHandle, "CAN_Read")
-	pHandleReadFD, _ = syscall.GetProcAddress(pcanAPIHandle, "CAN_ReadFD")
-	pHandleWrite, _ = syscall.GetProcAddress(pcanAPIHandle, "CAN_Write")
-	pHandleWriteFD, _ = syscall.GetProcAddress(pcanAPIHandle, "CAN_WriteFD")
-	pHandleFilterMessages, _ = syscall.GetProcAddress(pcanAPIHandle, "CAN_FilterMessages")
-	pHandleGetValue, _ = syscall.GetProcAddress(pcanAPIHandle, "CAN_GetValue")
-	pHandleSetValue, _ = syscall.GetProcAddress(pcanAPIHandle, "CAN_SetValue")
-	pHandleGetErrorText, _ = syscall.GetProcAddress(pcanAPIHandle, "CAN_GetErrorText")
-	pHandleLookUpChannel, _ = syscall.GetProcAddress(pcanAPIHandle, "CAN_LookUpChannel")
+	pHandleInitialize, _ = pcanAPIHandle.FindProc("CAN_Initialize")
+	pHandleInitializeFD, _ = pcanAPIHandle.FindProc("CAN_InitializeFD")
+	pHandleUninitialize, _ = pcanAPIHandle.FindProc("CAN_Uninitialize")
+	pHandleReset, _ = pcanAPIHandle.FindProc("CAN_Reset")
+	pHandleGetStatus, _ = pcanAPIHandle.FindProc("CAN_GetStatus")
+	pHandleRead, _ = pcanAPIHandle.FindProc("CAN_Read")
+	pHandleReadFD, _ = pcanAPIHandle.FindProc("CAN_ReadFD")
+	pHandleWrite, _ = pcanAPIHandle.FindProc("CAN_Write")
+	pHandleWriteFD, _ = pcanAPIHandle.FindProc("CAN_WriteFD")
+	pHandleFilterMessages, _ = pcanAPIHandle.FindProc("CAN_FilterMessages")
+	pHandleGetValue, _ = pcanAPIHandle.FindProc("CAN_GetValue")
+	pHandleSetValue, _ = pcanAPIHandle.FindProc("CAN_SetValue")
+	pHandleGetErrorText, _ = pcanAPIHandle.FindProc("CAN_GetErrorText")
+	pHandleLookUpChannel, _ = pcanAPIHandle.FindProc("CAN_LookUpChannel")
 
-	apiLoaded = pHandleInitialize > 0 && pHandleInitializeFD > 0 && pHandleReset > 0 && pHandleGetStatus > 0 &&
-		pHandleRead > 0 && pHandleReadFD > 0 && pHandleWrite > 0 && pHandleWriteFD > 0 && pHandleFilterMessages > 0 && pHandleGetValue > 0 &&
-		pHandleSetValue > 0 && pHandleGetErrorText > 0 && pHandleLookUpChannel > 0 && pHandleUninitialize > 0
+	apiLoaded = pHandleInitialize != nil && pHandleInitializeFD != nil && pHandleReset != nil && pHandleGetStatus != nil &&
+		pHandleRead != nil && pHandleReadFD != nil && pHandleWrite != nil && pHandleWriteFD != nil && pHandleFilterMessages != nil && pHandleGetValue != nil &&
+		pHandleSetValue != nil && pHandleGetErrorText != nil && pHandleLookUpChannel != nil && pHandleUninitialize != nil
 
 	if !apiLoaded {
 		return errors.New("could not load pointers to pcan functions")
@@ -79,24 +79,24 @@ func LoadAPI() error {
 func UnloadAPI() error {
 
 	// reset pointers
-	pHandleInitialize = 0
-	pHandleInitializeFD = 0
-	pHandleUninitialize = 0
-	pHandleReset = 0
-	pHandleGetStatus = 0
-	pHandleRead = 0
-	pHandleReadFD = 0
-	pHandleWrite = 0
-	pHandleWriteFD = 0
-	pHandleFilterMessages = 0
-	pHandleGetValue = 0
-	pHandleSetValue = 0
-	pHandleGetErrorText = 0
-	pHandleLookUpChannel = 0
-	pHandleUninitialize = 0
+	pHandleInitialize = nil
+	pHandleInitializeFD = nil
+	pHandleUninitialize = nil
+	pHandleReset = nil
+	pHandleGetStatus = nil
+	pHandleRead = nil
+	pHandleReadFD = nil
+	pHandleWrite = nil
+	pHandleWriteFD = nil
+	pHandleFilterMessages = nil
+	pHandleGetValue = nil
+	pHandleSetValue = nil
+	pHandleGetErrorText = nil
+	pHandleLookUpChannel = nil
+	pHandleUninitialize = nil
 	apiLoaded = false
 
-	err := syscall.FreeLibrary(pcanAPIHandle)
+	err := pcanAPIHandle.Release()
 	return err
 }
 
@@ -107,8 +107,8 @@ func UnloadAPI() error {
 // ioPort: Non-PnP: The I/O address for the parallel port
 // interrupt: Non-PnP: Interrupt number of the parallel por
 func Initialize(channel TPCANHandle, baudRate TPCANBaudrate, hwType TPCANType, ioPort uint32, interrupt uint16) (TPCANStatus, error) {
-	ret, _, errCall := syscall.SyscallN(pHandleInitialize, uintptr(channel), uintptr(baudRate), uintptr(hwType), uintptr(ioPort), uintptr(interrupt))
-	return TPCANStatus(ret), sysCallErr(errCall)
+	r1, _, errno := pHandleInitialize.Call(uintptr(channel), uintptr(baudRate), uintptr(hwType), uintptr(ioPort), uintptr(interrupt))
+	return TPCANStatus(r1), sysCallErr(errno)
 }
 
 // Initializes a FD capable PCAN Channel
@@ -123,29 +123,29 @@ func Initialize(channel TPCANHandle, baudRate TPCANBaudrate, hwType TPCANType, i
 //   - Following Parameters are optional (not used yet): data_ssp_offset, nom_sam
 //   - Example: f_clock=80000000,nom_brp=10,nom_tseg1=5,nom_tseg2=2,nom_sjw=1,data_brp=4,data_tseg1=7,data_tseg2=2,data_sjw=1
 func InitializeFD(channel TPCANHandle, bitRateFD TPCANBitrateFD) (TPCANStatus, error) {
-	ret, _, errCall := syscall.SyscallN(pHandleInitializeFD, uintptr(channel), uintptr(unsafe.Pointer(&bitRateFD)))
-	return TPCANStatus(ret), sysCallErr(errCall)
+	ret, _, errno := pHandleInitializeFD.Call(uintptr(channel), uintptr(unsafe.Pointer(&bitRateFD)))
+	return TPCANStatus(ret), sysCallErr(errno)
 }
 
 // Uninitializes PCAN Channels initialized by CAN_Initialize
 // Channel: The handle of a PCAN Channel
 func Uninitialize(channel TPCANHandle) (TPCANStatus, error) {
-	ret, _, errCall := syscall.SyscallN(pHandleUninitialize, uintptr(channel))
-	return TPCANStatus(ret), sysCallErr(errCall)
+	ret, _, errno := pHandleUninitialize.Call(uintptr(channel))
+	return TPCANStatus(ret), sysCallErr(errno)
 }
 
 // Resets the receive and transmit queues of the PCAN Channel
 // Channel: The handle of a PCAN Channel
 func Reset(channel TPCANHandle) (TPCANStatus, error) {
-	ret, _, errCall := syscall.SyscallN(pHandleReset, uintptr(channel))
-	return TPCANStatus(ret), sysCallErr(errCall)
+	ret, _, errno := pHandleReset.Call(uintptr(channel))
+	return TPCANStatus(ret), sysCallErr(errno)
 }
 
 // Gets the current status of a PCAN Channel
 // Channel: The handle of a PCAN Channel
 func GetStatus(channel TPCANHandle) (TPCANStatus, error) {
-	ret, _, errCall := syscall.SyscallN(pHandleGetStatus, uintptr(channel))
-	return TPCANStatus(ret), sysCallErr(errCall)
+	ret, _, errno := pHandleGetStatus.Call(uintptr(channel))
+	return TPCANStatus(ret), sysCallErr(errno)
 }
 
 // Reads a CAN message from the receive queue of a PCAN Channel
@@ -154,8 +154,8 @@ func Read(channel TPCANHandle) (TPCANStatus, TPCANMsg, TPCANTimestamp, error) {
 	var msg TPCANMsg
 	var timeStamp = TPCANTimestamp{}
 
-	ret, _, errCall := syscall.SyscallN(pHandleRead, uintptr(channel), uintptr(unsafe.Pointer(&msg)), uintptr(unsafe.Pointer(&timeStamp)))
-	return TPCANStatus(ret), msg, timeStamp, sysCallErr(errCall)
+	ret, _, errno := pHandleRead.Call(uintptr(channel), uintptr(unsafe.Pointer(&msg)), uintptr(unsafe.Pointer(&timeStamp)))
+	return TPCANStatus(ret), msg, timeStamp, sysCallErr(errno)
 }
 
 // Reads a CAN message from the receive queue of a FD capable PCAN Channel
@@ -164,24 +164,24 @@ func ReadFD(channel TPCANHandle) (TPCANStatus, TPCANMsgFD, TPCANTimestampFD, err
 	var msgFD TPCANMsgFD
 	var timeStampFD TPCANTimestampFD
 
-	ret, _, errCall := syscall.SyscallN(pHandleReadFD, uintptr(channel), uintptr(unsafe.Pointer(&msgFD)), uintptr(unsafe.Pointer(&timeStampFD)))
-	return TPCANStatus(ret), msgFD, timeStampFD, sysCallErr(errCall)
+	ret, _, errno := pHandleReadFD.Call(uintptr(channel), uintptr(unsafe.Pointer(&msgFD)), uintptr(unsafe.Pointer(&timeStampFD)))
+	return TPCANStatus(ret), msgFD, timeStampFD, sysCallErr(errno)
 }
 
 // Transmits a CAN message
 // Channel: The handle of a PCAN Channel
 // msg: A Message struct with the message to be sent
 func Write(channel TPCANHandle, msg TPCANMsg) (TPCANStatus, error) {
-	ret, _, errCall := syscall.SyscallN(pHandleWrite, uintptr(channel), uintptr(unsafe.Pointer(&msg)))
-	return TPCANStatus(ret), sysCallErr(errCall)
+	ret, _, errno := pHandleWrite.Call(uintptr(channel), uintptr(unsafe.Pointer(&msg)))
+	return TPCANStatus(ret), sysCallErr(errno)
 }
 
 // Transmits a CAN message over a FD capable PCAN Channel
 // Channel: The handle of a PCAN Channel
 // msgFD A MessageFD struct with the message to be sent
 func WriteFD(channel TPCANHandle, msgFD TPCANMsgFD) (TPCANStatus, error) {
-	ret, _, errCall := syscall.SyscallN(pHandleWriteFD, uintptr(channel), uintptr(unsafe.Pointer(&msgFD)))
-	return TPCANStatus(ret), sysCallErr(errCall)
+	ret, _, errno := pHandleWriteFD.Call(uintptr(channel), uintptr(unsafe.Pointer(&msgFD)))
+	return TPCANStatus(ret), sysCallErr(errno)
 }
 
 // Configures the reception filter
@@ -190,13 +190,13 @@ func WriteFD(channel TPCANHandle, msgFD TPCANMsgFD) (TPCANStatus, error) {
 // toID: The highest CAN ID to be received
 // mode: Message type, Standard (11-bit identifier) or Extended (29-bit identifier)
 func FilterMessages(channel TPCANHandle, fromID TPCANMsgID, toID TPCANMsgID, mode TPCANMode) (TPCANStatus, error) {
-	ret, _, errCall := syscall.SyscallN(pHandleFilterMessages, uintptr(channel), uintptr(fromID), uintptr(toID), uintptr(mode))
-	return TPCANStatus(ret), sysCallErr(errCall)
+	ret, _, errno := pHandleFilterMessages.Call(uintptr(channel), uintptr(fromID), uintptr(toID), uintptr(mode))
+	return TPCANStatus(ret), sysCallErr(errno)
 }
 
 // the filter applied to handle
 func ResetFilter(channel TPCANHandle) (TPCANStatus, error) {
-	return PCAN_ERROR_OK, nil
+	return PCAN_ERROR_OK, nil // TODO this function is empty!?
 }
 
 // Retrieves a PCAN Channel value using a defined parameter value type
@@ -217,8 +217,8 @@ func GetParameter(channel TPCANHandle, param TPCANParameter) (TPCANStatus, TPCAN
 // Note: Parameters can be present or not according with the kind of Hardware (PCAN Channel) being used.
 // If a parameter is not available, a PCAN_ERROR_ILLPARAMTYPE error will be returned
 func SetParameter(channel TPCANHandle, param TPCANParameter, val TPCANParameterValue) (TPCANStatus, error) {
-	ret, err := SetValue(channel, param, unsafe.Pointer(&val), unsafe.Sizeof(val))
-	return TPCANStatus(ret), err
+	ret, errno := SetValue(channel, param, unsafe.Pointer(&val), unsafe.Sizeof(val))
+	return TPCANStatus(ret), sysCallErr(errno)
 }
 
 // Retrieves a PCAN Channel value
@@ -228,8 +228,8 @@ func SetParameter(channel TPCANHandle, param TPCANParameter, val TPCANParameterV
 // Note: Parameters can be present or not according with the kind of Hardware (PCAN Channel) being used.
 // If a parameter is not available, a PCAN_ERROR_ILLPARAMTYPE error will be returned
 func GetValue(channel TPCANHandle, param TPCANParameter, buffer unsafe.Pointer, bufferSize uint32) (TPCANStatus, error) { // TODO change buffersize to uintptr
-	ret, _, errCall := syscall.SyscallN(pHandleGetValue, uintptr(channel), uintptr(param), uintptr(buffer), uintptr(bufferSize))
-	return TPCANStatus(ret), sysCallErr(errCall)
+	ret, _, errno := pHandleGetValue.Call(uintptr(channel), uintptr(param), uintptr(buffer), uintptr(bufferSize))
+	return TPCANStatus(ret), sysCallErr(errno)
 }
 
 // Configures a PCAN Channel value.
@@ -239,8 +239,8 @@ func GetValue(channel TPCANHandle, param TPCANParameter, buffer unsafe.Pointer, 
 // Note: Parameters can be present or not according with the kind of Hardware (PCAN Channel) being used.
 // If a parameter is not available, a PCAN_ERROR_ILLPARAMTYPE error will be returned
 func SetValue(channel TPCANHandle, param TPCANParameter, buffer unsafe.Pointer, bufferSize uintptr) (TPCANStatus, error) {
-	ret, _, errCall := syscall.SyscallN(pHandleSetValue, uintptr(channel), uintptr(param), uintptr(buffer), bufferSize)
-	return TPCANStatus(ret), sysCallErr(errCall)
+	ret, _, errno := pHandleSetValue.Call(uintptr(channel), uintptr(param), uintptr(buffer), bufferSize)
+	return TPCANStatus(ret), sysCallErr(errno)
 }
 
 // Returns a descriptive text of a given TPCANStatus error code, in any desired language
@@ -249,8 +249,8 @@ func SetValue(channel TPCANHandle, param TPCANParameter, buffer unsafe.Pointer, 
 func GetErrorText(status TPCANStatus, language TPCANLanguage) (TPCANStatus, [MAX_LENGHT_STRING_BUFFER]byte, error) {
 	var buffer [MAX_LENGHT_STRING_BUFFER]byte
 
-	ret, _, errCall := syscall.SyscallN(pHandleGetErrorText, uintptr(status), uintptr(language), uintptr(unsafe.Pointer(&buffer)))
-	return TPCANStatus(ret), buffer, sysCallErr(errCall)
+	ret, _, errno := pHandleGetErrorText.Call(uintptr(status), uintptr(language), uintptr(unsafe.Pointer(&buffer)))
+	return TPCANStatus(ret), buffer, sysCallErr(errno)
 }
 
 // Finds a PCAN-Basic Channel that matches with the given parameters
@@ -285,15 +285,15 @@ func LookUpChannel(deviceType string, deviceID string, controllerNumber string, 
 		sParameters += string(LOOKUP_IP_ADDRESS) + "=" + ipAdress
 	}
 
-	ret, _, errCall := syscall.SyscallN(pHandleLookUpChannel, uintptr(unsafe.Pointer(&sParameters)), uintptr(unsafe.Pointer(&foundChannel)))
-	return TPCANStatus(ret), foundChannel, sysCallErr(errCall)
+	ret, _, errno := pHandleLookUpChannel.Call(uintptr(unsafe.Pointer(&sParameters)), uintptr(unsafe.Pointer(&foundChannel)))
+	return TPCANStatus(ret), foundChannel, sysCallErr(errno)
 }
 
 // helper function to handle syscall return value
-func sysCallErr(errCall syscall.Errno) error {
-	var err error
-	if errCall != 0 {
-		err = errors.New(errCall.Error())
+func sysCallErr(err error) error {
+	errno := err.(syscall.Errno)
+	if errno != 0 {
+		return errors.New(errno.Error())
 	}
-	return err
+	return nil
 }
