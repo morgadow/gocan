@@ -6,19 +6,18 @@ Supports Windows, Linux and MacOS.
 ```golang
 // Interface for all main CANBus functionality. Lower device interfaces may support more functionality
 type Bus interface {
-  Send(*Message) error                                          // Send a single message on the CAN bus
-  Recv(timeout int) (*Message, error)                           // Receive single message from CAN bus with timeout in [ms], a timeout below zero is treated as no timeout
-  StatusIsOkay() (bool, error)                                  // Check function if the connection state is okay
-  Status() (uint32, error)                                      // Returns the CAN status code, which can differ between different devices
-  State() BusState                                              // Returns the bus state (ACTIVE or PASSIVE)
-  ReadBuffer(limit uint16) ([]Message, error)                   // Empties the internal CAN hardware message buffer is device supports this feature with a maximum message count
-  SetFilter(fromID MessageID, toID MessageID, mode uint8) error // Set a message id filter on hardware if supported by device
-  Reset() error                                                 // Reset rx and tx buffer, does not reset hardware
-  Shutdown() error                                              // Disconnect from device
-  ChannelCondition() (ChannelCondition, error)                  // Returns channel condition
-  TraceSetPath(filePath string) error                           // Sets path for trace file, must be done before starting tracing
-  TraceStart() error                                            // Starts recording a trace; if path was not configured default path is calling script
-  TraceStop() error                                             // Stops recording currently running trace
+ Send(*Message) error                                          // Send a single message on the CAN bus
+ Recv(timeout int) (*Message, error)                           // Receive single message from CAN bus with timeout in [ms], a timeout below zero is treated as no timeout
+ StatusIsOkay() (bool, error)                                  // Check function if the connection state is okay
+ Status() (uint32, error)                                      // Returns the CAN status code, which can differ between different devices
+ State() BusState                                              // Returns the bus state (ACTIVE or PASSIVE)
+ ReadBuffer(limit uint16) ([]Message, error)                   // Empties the internal CAN hardware message buffer is device supports this feature with a maximum message count
+ SetFilter(fromID MessageID, toID MessageID, mode uint8) error // Set a message id filter on hardware if supported by device
+ Reset() error                                                 // Reset rx and tx buffer, does not reset hardware
+ Shutdown() error                                              // Disconnect from device
+ ChannelCondition() (ChannelCondition, error)                  // Returns channel condition
+ TraceStart(filePath string, maxFileSize int) error            // Starts recording a trace on given path
+ TraceStop() error                                             // Stops recording currently running trace
 }
 ```
 
@@ -99,12 +98,17 @@ type Bus interface {
   - message DLC now automatically evaluated when sending a message, before this the DLC must be set manually to an non zero value
   - updated README with an changelog section
 
-- v1.1.0:
+- v2.0.0:
   - internal restructure for PCAN interface
   - added tracing related functions to gocan bus interface and PCAN
   - changed license from MIT to GPLv3
   - added factory function for detecting available handles
-  - changed config struct for more receive filtering options 
+  - changed config struct for more receive filtering options
+
+- v2.1.0
+  - function TraceSetPath now deprecated and functionality merged into TraceStart function
+  - changed internal call convention for pcan driver
+  - changed pcan handle initialization to be only for plug n play devices on gocan interface, old variant still usable for direct pcan interface call
 
 ## Known Issues
 
