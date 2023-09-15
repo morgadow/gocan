@@ -100,7 +100,15 @@ func UnloadAPI() error {
 	return err
 }
 
-// Initializes a PCAN Channel
+// Initializes a basic plugNplay PCAN Channel
+// Channel: The handle of a PCAN Channel
+// baudRate: The speed for the communication (BTR0BTR1 code)
+func InitializeBasic(channel TPCANHandle, baudRate TPCANBaudrate) (TPCANStatus, error) {
+	r1, _, errno := pHandleInitialize.Call(uintptr(channel), uintptr(baudRate))
+	return TPCANStatus(r1), sysCallErr(errno)
+}
+
+// Initializes a advanced PCAN Channel
 // Channel: The handle of a PCAN Channel
 // baudRate: The speed for the communication (BTR0BTR1 code)
 // hwType: Non-PnP: The type of hardware and operation mode

@@ -23,7 +23,7 @@ func init() {
 }
 
 func auxInitBasic(channel pcan.TPCANHandle) {
-	state, err := pcan.Initialize(channel, pcan.PCAN_BAUD_500K, pcan.PCAN_TYPE_ISA, 0x02A0, 11)
+	state, err := pcan.InitializeBasic(channel, pcan.PCAN_BAUD_500K)
 	if err != nil || state != pcan.PCAN_ERROR_OK {
 		fmt.Println(fmt.Errorf("Helper function got error or invalid stats: %v - %w", state, err))
 		panic(err)
@@ -76,6 +76,19 @@ func auxErrBufToText(buffer [256]byte) string {
 	return string(buffer[:numBytes])
 }
 
+func TestInitializeBasic(t *testing.T) {
+
+	state, err := pcan.InitializeBasic(pcan.PCAN_USBBUS1, pcan.PCAN_BAUD_500K)
+
+	if state != pcan.PCAN_ERROR_OK && state != pcan.PCAN_ERROR_BUSLIGHT && state != pcan.PCAN_ERROR_BUSHEAVY {
+
+		t.Errorf("got non okay status code: %x", state)
+	}
+	if err != nil {
+		t.Errorf("got error: %v", err)
+	}
+}
+
 func TestInitialize(t *testing.T) {
 
 	state, err := pcan.Initialize(pcan.PCAN_USBBUS1, pcan.PCAN_BAUD_500K, pcan.PCAN_TYPE_ISA, 0x02A0, 11)
@@ -88,6 +101,7 @@ func TestInitialize(t *testing.T) {
 		t.Errorf("got error: %v", err)
 	}
 }
+
 func TestUnitialize(t *testing.T) {
 
 	auxInitBasic(pcan.PCAN_USBBUS1)
