@@ -299,6 +299,9 @@ func LookUpChannel(deviceType string, deviceID string, controllerNumber string, 
 
 // helper function to handle syscall return value
 func sysCallErr(err error) error {
+	if err == nil {
+		return err
+	}
 	errno := err.(syscall.Errno)
 	if errno != 0 {
 		return errors.New(errno.Error())
