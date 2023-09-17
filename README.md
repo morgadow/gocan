@@ -98,16 +98,15 @@ type Bus interface {
   - message DLC now automatically evaluated when sending a message, before this the DLC must be set manually to an non zero value
   - updated README with an changelog section
 
-- v2.0.0:
+- v1.1.0:
   - internal restructure for PCAN interface
-  - added tracing related functions to gocan bus interface and PCAN
+  - added tracing related functions to gocan bus interface and implemented functionality in PCAN interface
+    - added TraceStart(filePath string, maxFileSize int) error:
+    - added TraceStop() error
   - changed license from MIT to GPLv3
   - added factory function for detecting available handles
-  - changed config struct for more receive filtering options
-
-- v2.1.0
-  - function TraceSetPath now deprecated and functionality merged into TraceStart function
-  - changed internal call convention for pcan driver
+  - changed config struct for more receive filtering options and implemented direct dll support for this settings in PCAN
+  - changed internal call convention for PCAN driver
   - changed pcan handle initialization to be only for plug n play devices on gocan interface, old variant still usable for direct pcan interface call
 
 ## Known Issues
