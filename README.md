@@ -109,6 +109,9 @@ type Bus interface {
   - changed internal call convention for PCAN driver
   - changed pcan handle initialization to be only for plug n play devices on gocan interface, old variant still usable for direct pcan interface call
 
+- v1.1.1:
+  - bugfix in pcan interface error handling where nil errors are tried to convert into syscall errors 
+
 ## Known Issues
 
 This section lists all known-issues, missing features and open bugs.
