@@ -1,27 +1,33 @@
 package pcan
 
-type TPCANLanguage uint16        // Represents a language chosen for the error messages
-type TPCANHandle uint16          // Represents a PCAN hardware channel handle
-type TPCANStatus uint32          // Represents a PCAN status/error code
-type TPCANDevice uint8           // Represents a PCAN device
-type TPCANParameter uint8        // Represents a PCAN parameter to be read or set
-type TPCANParameterValue uint32  // Represents a PCAN parameter value
-type TPCANMessageType uint8      // Represents the type of a PCAN message
-type TPCANMode uint8             // Represents a PCAN filter mode
-type TPCANBaudrate uint16        // Represents a PCAN Baud rate register value (BTR0/BTR1 register values for the CAN controller)
-type TPCANType uint8             // Represents the type of PCAN hardware to be initialized
-type TPCANLookupParameter string // LookUp Parameters
-type TPCANBRParameter string     // Represents the configuration for a CAN bit rate (Example: f_clock=80000000,nom_brp=10,nom_tseg1=5,nom_tseg2=2,nom_sjw=1,data_brp=4,data_tseg1=7,data_tseg2=2,data_sjw=1)
-type TPCANBitrateFD string       // Represents a PCAN-FD bit rate string
-type TPCANMsgID uint32           // 11/29-bit message identifier
-type TPCANTimestampFD uint64     // Represents a timestamp of a received PCAN FD message
+type (
+	TPCANLanguage        uint16 // Represents a language chosen for the error messages
+	TPCANHandle          uint16 // Represents a PCAN hardware channel handle
+	TPCANStatus          uint32 // Represents a PCAN status/error code
+	TPCANDevice          uint8  // Represents a PCAN device
+	TPCANParameter       uint8  // Represents a PCAN parameter to be read or set
+	TPCANParameterValue  uint32 // Represents a PCAN parameter value
+	TPCANMessageType     uint8  // Represents the type of a PCAN message
+	TPCANMode            uint8  // Represents a PCAN filter mode
+	TPCANBaudrate        uint16 // Represents a PCAN Baud rate register value (BTR0/BTR1 register values for the CAN controller)
+	TPCANType            uint8  // Represents the type of PCAN hardware to be initialized
+	TPCANLookupParameter string // LookUp Parameters
+	TPCANBRParameter     string // Represents the configuration for a CAN bit rate (Example: f_clock=80000000,nom_brp=10,nom_tseg1=5,nom_tseg2=2,nom_sjw=1,data_brp=4,data_tseg1=7,data_tseg2=2,data_sjw=1)
+	TPCANBitrateFD       string // Represents a PCAN-FD bit rate string
+	TPCANMsgID           uint32 // 11/29-bit message identifier
+	TPCANTimestampFD     uint64 // Represents a timestamp of a received PCAN FD message
+)
 
-const MAX_LENGTH_HARDWARE_NAME = 33                        // Maximum length of the name of a device: 32 characters + terminator
-const MAX_LENGHT_STRING_BUFFER = 256                       // Maximum length of any string buffer sent or received from pcan dll
-const MAX_LENGTH_VERSION_STRING = MAX_LENGHT_STRING_BUFFER // Maximum length of a version string: 255 characters + terminator
-
-const LENGTH_DATA_CAN_MESSAGE = 8    // maximum amount of bytes in an PCAN CAN message  // todo private?
-const LENGTH_DATA_CANFD_MESSAGE = 64 // maximum amount of bytes in can CAN FD message  // todo private?
+const (
+	MAX_LENGTH_HARDWARE_NAME     = 33                       // Maximum length of the name of a device: 32 characters + terminator
+	MAX_LENGHT_STRING_BUFFER     = 256                      // Maximum length of any string buffer sent or received from pcan dll
+	MAX_LENGTH_VERSION_STRING    = MAX_LENGHT_STRING_BUFFER // Maximum length of a version string: 255 characters + terminator
+	MAX_TRACE_FILE_SIZE_ACCEPTED = 100                      // Maximum size of a trace file in MB
+)
+const (
+	LENGTH_DATA_CAN_MESSAGE   = 8  // maximum amount of bytes in an PCAN CAN message
+	LENGTH_DATA_CANFD_MESSAGE = 64 // maximum amount of bytes in can CAN FD message
+)
 
 // Represents a language chosen for the error messages
 const (

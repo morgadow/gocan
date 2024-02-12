@@ -17,8 +17,10 @@ var bootTimeEpoch uint64 = 0             // Message epoch time / TODO implement 
 var hasEvents = true                     // indicates if WaitForSingleObject can be used to reduce CPU load while waiting for messages /
 
 // errors
-var ErrInvalidChannel = errors.New("invalid channel selected")
-var ErrInvalidBaudRate = errors.New("invalid baudrate selected")
+var (
+	ErrInvalidChannel  = errors.New("invalid channel selected")
+	ErrInvalidBaudRate = errors.New("invalid baudrate selected")
+)
 
 // All available standard baud rates for PCAN Channels (defining custom is theoretically possible)
 // Defined this way to improve config file suppport
@@ -197,9 +199,9 @@ type pcanBus struct {
 	Handle    TPCANHandle
 	Bitrate   TPCANBaudrate  // only set if not a FD channel
 	BitrateFD TPCANBitrateFD // only set if a FD channel
-	HWType    TPCANType      // only for non plug´n´play devices // TODO remove from call and use easy plug'n'play version https://documentation.help/PCAN-Basic/
-	IOPort    uint32         // only for non plug´n´play devices // TODO remove from call and use easy plug'n'play version https://documentation.help/PCAN-Basic/
-	Interrupt uint16         // only for non plug´n´play devices // TODO remove from call and use easy plug'n'play version https://documentation.help/PCAN-Basic/
+	HWType    TPCANType      // only for non plug´n´play devices and currently not used
+	IOPort    uint32         // only for non plug´n´play devices and currently not used
+	Interrupt uint16         // only for non plug´n´play devices and currently not used
 	recvEvent syscall.Handle
 }
 
@@ -271,10 +273,9 @@ func (p *pcanBus) Initialize() error {
 	} else {
 		ret, err = Initialize(p.Handle, p.Bitrate, p.HWType, p.IOPort, p.Interrupt)
 		err = evalRetval(ret, err)
-	}
-
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	// prepare WaitForSingleObject implementation when waiting for CAN messages (currently only windows support)
@@ -584,9 +585,14 @@ func (p *pcanBus) ChannelCondition() (gocan.ChannelCondition, error) {
 	return cond, evalRetval(state, err)
 }
 
-// Starts recording a trace on given location
-// maxFileSize: trace file is splitted in files with this maximum size of file in MB; set to zero to have a infinite large trace file
-func (p *pcanBus) TraceStart(filePath string, maxFileSize int) error {
+// Starts recording a trace on given path with a max file size in MB
+// maxFileSize: trace file is splitted in files with this maximum size of file in MB; set to zero to have a infinite large trace file (max is 100 MB)
+// Note: A trace file only gets filled if the Recv() function is called!
+func (p *pcanBus) TraceStart(filePath string, maxFileSize uint32) error {
+
+	if maxFileSize > MAX_TRACE_FILE_SIZE_ACCEPTED {
+		return fmt.Errorf("maximum size of a trace file is %v MB", MAX_TRACE_FILE_SIZE_ACCEPTED)
+	}
 
 	// configure trace configuration (only file size is set, the other options are always used)
 	cfg := TRACE_FILE_DATE | TRACE_FILE_TIME | TRACE_FILE_OVERWRITE
@@ -598,6 +604,12 @@ func (p *pcanBus) TraceStart(filePath string, maxFileSize int) error {
 	state, err := SetParameter(p.Handle, PCAN_TRACE_CONFIGURE, cfg)
 	if err != nil || state != PCAN_ERROR_OK {
 		return evalRetval(state, err)
+	}
+	if maxFileSize > 0 {
+		state, err := SetValue(p.Handle, PCAN_TRACE_SIZE, unsafe.Pointer(&maxFileSize), 4)
+		if err != nil || state != PCAN_ERROR_OK {
+			return evalRetval(state, err)
+		}
 	}
 
 	// configure trace file path

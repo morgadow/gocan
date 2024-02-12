@@ -53,7 +53,7 @@ type Bus interface {
 	Reset() error                                                 // Reset rx and tx buffer, does not reset hardware
 	Shutdown() error                                              // Disconnect from device
 	ChannelCondition() (ChannelCondition, error)                  // Returns channel condition
-	TraceStart(filePath string, maxFileSize int) error            // Starts recording a trace on given path
+	TraceStart(filePath string, maxFileSize uint32) error         // Starts recording a trace on given path with a max file size in MB (0 for unlimited file size)
 	TraceStop() error                                             // Stops recording currently running trace
 }
 

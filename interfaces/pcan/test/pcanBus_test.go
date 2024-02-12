@@ -43,10 +43,17 @@ func TestTraceStart(t *testing.T) {
 
 	tracePath := "C:/workspace/go/src/github.com/morgadow"
 	fileSize := 100
-	err = pbus.TraceStart(tracePath, fileSize)
+	err = pbus.TraceStart(tracePath, uint32(fileSize))
 	if err != nil {
 		t.Errorf("error while starting trace: %v", err)
 	}
+
+	// activly read from queue to fill file
+	pbus.Recv(1)
+	pbus.Recv(1)
+	pbus.Recv(1)
+	pbus.Recv(1)
+	pbus.Recv(1)
 
 	err = pbus.TraceStop()
 	if err != nil {
