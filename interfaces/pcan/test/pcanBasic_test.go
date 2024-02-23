@@ -48,7 +48,7 @@ func auxReadBasic(channel pcan.TPCANHandle, timeout uint32) (pcan.TPCANStatus, p
 	endTime := startTime + int64(timeout) // timeout is [ms]
 
 	for {
-		state, msg, timestamp, err = pcan.Read(pcan.PCAN_USBBUS1)
+		state, msg, timestamp, err = pcan.Read(pcan.PCAN_USBBUS1) // direct api call
 		if state != pcan.PCAN_ERROR_QRCVEMPTY {
 			if msg.MsgType == pcan.PCAN_MESSAGE_STANDARD || msg.MsgType == pcan.PCAN_MESSAGE_EXTENDED {
 				fmt.Printf("Got Message: %v - ID: %x, Data: %v, DLC: %v, Type: %v\n", timestamp, msg.ID, msg.DLC, msg.Data, msg.MsgType)
@@ -140,7 +140,17 @@ func TestGetStatus(t *testing.T) {
 	}
 }
 
-func TestRead(t *testing.T) {
+func TestReadBasic(t *testing.T) {
+	auxInitBasic(pcan.PCAN_USBBUS1)
+	state, msg, timestamp, err := auxReadBasic(pcan.PCAN_USBBUS1, 5000)
+	if state != pcan.PCAN_ERROR_OK || msg.ID == 0x0 {
+		t.Errorf("no message: state: %v, msg: %v, timestamp: %v, err: %v", state, msg, timestamp, err)
+	} else {
+		fmt.Printf("received message: state: %v, msg: %v, timestamp: %v, err: %v\n", state, msg, timestamp, err)
+	}
+}
+
+func TestReadSpecific(t *testing.T) {
 
 	auxInitBasic(pcan.PCAN_USBBUS1)
 

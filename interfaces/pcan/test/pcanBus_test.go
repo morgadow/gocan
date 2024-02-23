@@ -35,6 +35,25 @@ func TestChannelCondition(t *testing.T) {
 	fmt.Println(cond)
 }
 
+func TestRecv(t *testing.T) {
+	pbus, err := auxInitBus("PCAN_USBBUS1")
+	if err != nil {
+		t.Errorf("error while creating bus: %v", err)
+	}
+
+	msg, err := pbus.Recv(5000)
+	if msg == nil || msg.ID == 0 || err != nil {
+		t.Errorf("no message: msg: %v, err: %v", msg, err)
+		return
+	} else {
+		fmt.Printf("received message: msg: %v, err: %v\n", msg, err)
+	}
+
+	if msg.Type != gocan.DataFrame || msg.IsExtended != true || len(msg.Data) == 0 {
+		t.Errorf("invalid message: msg type: %v, msg id type: %v, msg data len %v", msg.Type, msg.IsExtended, msg.Data)
+	}
+}
+
 func TestTraceStart(t *testing.T) {
 	pbus, err := auxInitBus("PCAN_USBBUS1")
 	if err != nil {

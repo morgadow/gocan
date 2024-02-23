@@ -331,6 +331,8 @@ func (p *pcanBus) Recv(timeout int) (*gocan.Message, error) {
 					break
 				case syscall.WAIT_FAILED:
 					return nil, errWait
+				case syscall.WAIT_TIMEOUT:
+					return nil, errWait
 				default:
 					return nil, errWait
 				}
@@ -386,7 +388,7 @@ func (p *pcanBus) recvSingleMessage() (TPCANStatus, *gocan.Message, error) {
 		rxData = msg.Data[:getLengthFromDLC(rxDLC)] // only return the suggested message length, even if full message is held in buffer with 8 byte
 	}
 
-	// determine message frame type
+	// determine message frame type	// TODO rewrite switch?
 	if rxMsgType == PCAN_MESSAGE_STANDARD || rxMsgType == PCAN_MESSAGE_EXTENDED || rxMsgType == PCAN_MESSAGE_FD {
 		msgType = gocan.DataFrame
 	} else if rxMsgType == PCAN_MESSAGE_RTR {
