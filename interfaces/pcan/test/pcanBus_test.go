@@ -2,7 +2,9 @@ package test
 
 import (
 	"fmt"
+	"math"
 	"testing"
+	"time"
 
 	"github.com/morgadow/gocan"
 	"github.com/morgadow/gocan/interfaces/pcan"
@@ -92,4 +94,65 @@ func TestTraceStop(t *testing.T) {
 	if err != nil {
 		t.Errorf("error while stopping trace: %v", err)
 	}
+}
+
+// test if message is received in expected interval
+// Note: For this to work, send a message from another device with fixed interval of 100ms
+func TestMsgInterval(t *testing.T) {
+	pbus, err := auxInitBus("PCAN_USBBUS1")
+	if err != nil {
+		t.Errorf("error while creating bus: %v", err)
+	}
+
+	expID := gocan.MessageID(0x13000350)
+	var expInterval int64 = 100 * 1000 // µs
+	var measInterval int64 = 0
+	startTime := time.Now()
+	duration := 10 * time.Second
+	timeoutRecv := 100 * time.Millisecond
+	timeLastMsg := time.Time{}
+	timeFirstSet := false
+	measIntervalSet := false
+	amountMsgs := 0
+	expMsgs := 100
+
+	// loop and receive multiple messages to check interval
+	for time.Since(startTime) < duration {
+		msg, _ := pbus.Recv(int(timeoutRecv))
+		if msg != nil && msg.ID == expID {
+			amountMsgs++
+			if !timeFirstSet {
+				timeLastMsg = time.Now()
+				timeFirstSet = true
+				continue
+			}
+			timeSinceLastMsg := time.Since(timeLastMsg).Microseconds()
+			if !measIntervalSet {
+				measInterval = timeSinceLastMsg
+				measIntervalSet = true
+				continue
+			}
+			measInterval = (measInterval*80 + timeSinceLastMsg*20) / 100
+			timeLastMsg = time.Now()
+		}
+	}
+
+	if !near32(amountMsgs, expMsgs, 2) {
+		t.Errorf("invalid msg count. Got %v msgs\n", amountMsgs)
+	} else {
+		fmt.Printf("msg count okay. Got %v msgs\n", amountMsgs)
+	}
+
+	if !near64(measInterval, expInterval, 50) {
+		t.Errorf("invalid interval. got: %v µs, expected: %v µs. \n", measInterval, expInterval)
+	} else {
+		fmt.Printf("interval okay. got: %v µs, expected: %v µs.\n", measInterval, expInterval)
+	}
+}
+
+func near32(value, target, tolerance int) bool {
+	return math.Abs(float64(value-target)) <= float64(tolerance)
+}
+func near64(value, target, tolerance int64) bool {
+	return math.Abs(float64(value-target)) <= float64(tolerance)
 }
