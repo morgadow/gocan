@@ -298,7 +298,7 @@ func TestGetParameter(t *testing.T) {
 	if err != nil {
 		t.Errorf("got error: %v", err)
 	}
-	if val != pcan.PCAN_CHANNEL_OCCUPIED {
+	if pcan.TPCANCHannelCondition(val) != pcan.PCAN_CHANNEL_OCCUPIED {
 		t.Errorf("got wrong condition: %v", val)
 	}
 }
@@ -429,6 +429,18 @@ func TestAttachedChannels(t *testing.T) {
 	if err != nil {
 		t.Errorf("got error: %v", err)
 	}
+
+	if len(channels) < 1 {
+		t.Errorf("got invalid channels length: %v", len(channels))
+	}
+}
+
+func TestAttachedChannels_Extended(t *testing.T) {
+	pcan.LoadAPI()
+	channels, err := pcan.AttachedChannels_Extended()
+	if err != nil {
+		t.Errorf("got error: %v", err)
+	}
 	if len(channels) < 1 {
 		t.Errorf("got invalid channels length: %v", len(channels))
 	}
@@ -449,10 +461,10 @@ func TestAttachedChannels(t *testing.T) {
 	// }
 
 	// channel conditions
-	unavailable := (channels[0].ChannelCondition & uint32(pcan.PCAN_CHANNEL_UNAVAILABLE)) == uint32(pcan.PCAN_CHANNEL_UNAVAILABLE)
-	available := (channels[0].ChannelCondition & uint32(pcan.PCAN_CHANNEL_AVAILABLE)) == uint32(pcan.PCAN_CHANNEL_AVAILABLE)
-	occupied := (channels[0].ChannelCondition & uint32(pcan.PCAN_CHANNEL_OCCUPIED)) == uint32(pcan.PCAN_CHANNEL_OCCUPIED)
-	pcanview := (channels[0].ChannelCondition & uint32(pcan.PCAN_CHANNEL_PCANVIEW)) == uint32(pcan.PCAN_CHANNEL_PCANVIEW)
+	unavailable := (channels[0].ChannelCondition & pcan.PCAN_CHANNEL_UNAVAILABLE) == pcan.PCAN_CHANNEL_UNAVAILABLE
+	available := (channels[0].ChannelCondition & pcan.PCAN_CHANNEL_AVAILABLE) == pcan.PCAN_CHANNEL_AVAILABLE
+	occupied := (channels[0].ChannelCondition & pcan.PCAN_CHANNEL_OCCUPIED) == pcan.PCAN_CHANNEL_OCCUPIED
+	pcanview := (channels[0].ChannelCondition & pcan.PCAN_CHANNEL_PCANVIEW) == pcan.PCAN_CHANNEL_PCANVIEW
 
 	fmt.Println("unavailable", unavailable)
 	fmt.Println("available", available)

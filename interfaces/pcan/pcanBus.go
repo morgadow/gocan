@@ -341,7 +341,7 @@ func (p *pcanBus) Recv(timeout int) (*gocan.Message, error) {
 				if time.Now().UnixNano()/int64(time.Millisecond) > endTime {
 					return nil, err
 				}
-				time.Sleep(1 * time.Millisecond)
+				time.Sleep(250 * time.Microsecond)
 			}
 		}
 	}
@@ -555,13 +555,14 @@ func (p *pcanBus) ChannelCondition2() (gocan.ChannelCondition, error) {
 	var cond gocan.ChannelCondition = gocan.Invalid
 	state, val, err := GetParameter(p.Handle, PCAN_CHANNEL_CONDITION)
 
-	if (val & PCAN_CHANNEL_AVAILABLE) == PCAN_CHANNEL_AVAILABLE {
+	condition := TPCANCHannelCondition(val)
+	if (condition & PCAN_CHANNEL_AVAILABLE) == PCAN_CHANNEL_AVAILABLE {
 		cond = gocan.Available
-	} else if (val & PCAN_CHANNEL_OCCUPIED) == PCAN_CHANNEL_OCCUPIED {
+	} else if (condition & PCAN_CHANNEL_OCCUPIED) == PCAN_CHANNEL_OCCUPIED {
 		cond = gocan.Occupied
-	} else if (val & PCAN_CHANNEL_PCANVIEW) == PCAN_CHANNEL_PCANVIEW {
+	} else if (condition & PCAN_CHANNEL_PCANVIEW) == PCAN_CHANNEL_PCANVIEW {
 		cond = gocan.Occupied
-	} else if (val & PCAN_CHANNEL_UNAVAILABLE) == PCAN_CHANNEL_UNAVAILABLE {
+	} else if (condition & PCAN_CHANNEL_UNAVAILABLE) == PCAN_CHANNEL_UNAVAILABLE {
 		cond = gocan.Unavailable
 	}
 
@@ -603,7 +604,7 @@ func (p *pcanBus) TraceStart(filePath string, maxFileSize uint32) error {
 	} else {
 		cfg |= TRACE_FILE_SINGLE
 	}
-	state, err := SetParameter(p.Handle, PCAN_TRACE_CONFIGURE, cfg)
+	state, err := SetParameter(p.Handle, PCAN_TRACE_CONFIGURE, TPCANParameterValue(cfg))
 	if err != nil || state != PCAN_ERROR_OK {
 		return evalRetval(state, err)
 	}
@@ -647,7 +648,30 @@ func ShutdownAllHandles() error {
 }
 
 // Returns list of all existing PCAN channels on a system in a single call, regardless of their current availability
-func AttachedChannels() ([]TPCANChannelInformation, error) {
+func AttachedChannels() ([]TPCANHandle, error) {
+	posChannels := [...]TPCANHandle{PCAN_USBBUS1, PCAN_USBBUS2, PCAN_USBBUS3, PCAN_USBBUS4,
+		PCAN_USBBUS5, PCAN_USBBUS6, PCAN_USBBUS7, PCAN_USBBUS8,
+		PCAN_USBBUS9, PCAN_USBBUS10, PCAN_USBBUS11, PCAN_USBBUS12,
+		PCAN_USBBUS13, PCAN_USBBUS14, PCAN_USBBUS15, PCAN_USBBUS16}
+	attachedChannels := []TPCANHandle{}
+
+	// iterate through channels and check for every channel if available
+	for i := range posChannels {
+		state, cond, err := GetParameter(posChannels[i], PCAN_CHANNEL_CONDITION)
+		if state != PCAN_ERROR_OK || err != nil {
+			return nil, err
+		}
+		if cond == TPCANParameterValue(PCAN_CHANNEL_AVAILABLE) {
+			attachedChannels = append(attachedChannels, posChannels[i])
+		}
+	}
+
+	return attachedChannels, nil
+}
+
+// Returns list of all existing PCAN channels on a system in a single call, regardless of their current availability
+// TODO This function is not working correctly, as the given information does not matched connected hardware
+func AttachedChannels_Extended() ([]TPCANChannelInformation, error) {
 	count, err := AttachedChannelsCount()
 	if err != nil || count == 0 { // size calculation not possible with a slice len of 0
 		return nil, err
@@ -662,21 +686,17 @@ func AttachedChannels() ([]TPCANChannelInformation, error) {
 
 // Returns list of all existing PCAN channels on a system in a single call, regardless of their current availability
 func AttachedChannelsNames() ([]string, error) {
-	count, err := AttachedChannelsCount()
-	if err != nil || count == 0 { // size calculation not possible with a slice len of 0
+	channels, err := AttachedChannels()
+	if err != nil { // size calculation not possible with a slice len of 0
 		return nil, err
 	}
 
-	buf := make([]TPCANChannelInformation, count)
-	size := uintptr(len(buf)) * unsafe.Sizeof(buf[0])
-	state, err := GetValue(PCAN_NONEBUS, PCAN_ATTACHED_CHANNELS, unsafe.Pointer(&buf[0]), uint32(size))
-
-	channels := make([]string, count)
-	for i := range buf {
-		channels[i] = ChannelToString[buf[i].Channel]
+	names := make([]string, len(channels))
+	for i := range channels {
+		names[i] = ChannelToString[channels[i]]
 	}
 
-	return channels, evalRetval(state, err)
+	return names, nil
 }
 
 // Gets information about all existing PCAN channels on a system in a single call, regardless of their current availability.

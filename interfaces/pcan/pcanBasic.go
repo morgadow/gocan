@@ -160,7 +160,7 @@ func GetStatus(channel TPCANHandle) (TPCANStatus, error) {
 // Channel: The handle of a PCAN Channel
 func Read(channel TPCANHandle) (TPCANStatus, TPCANMsg, TPCANTimestamp, error) {
 	var msg TPCANMsg
-	var timeStamp = TPCANTimestamp{}
+	var timeStamp TPCANTimestamp
 
 	ret, _, errno := pHandleRead.Call(uintptr(channel), uintptr(unsafe.Pointer(&msg)), uintptr(unsafe.Pointer(&timeStamp)))
 	return TPCANStatus(ret), msg, timeStamp, sysCallErr(errno)

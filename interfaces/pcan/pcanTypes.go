@@ -1,21 +1,27 @@
 package pcan
 
 type (
-	TPCANLanguage        uint16 // Represents a language chosen for the error messages
-	TPCANHandle          uint16 // Represents a PCAN hardware channel handle
-	TPCANStatus          uint32 // Represents a PCAN status/error code
-	TPCANDevice          uint8  // Represents a PCAN device
-	TPCANParameter       uint8  // Represents a PCAN parameter to be read or set
-	TPCANParameterValue  uint32 // Represents a PCAN parameter value
-	TPCANMessageType     uint8  // Represents the type of a PCAN message
-	TPCANMode            uint8  // Represents a PCAN filter mode
-	TPCANBaudrate        uint16 // Represents a PCAN Baud rate register value (BTR0/BTR1 register values for the CAN controller)
-	TPCANType            uint8  // Represents the type of PCAN hardware to be initialized
-	TPCANLookupParameter string // LookUp Parameters
-	TPCANBRParameter     string // Represents the configuration for a CAN bit rate (Example: f_clock=80000000,nom_brp=10,nom_tseg1=5,nom_tseg2=2,nom_sjw=1,data_brp=4,data_tseg1=7,data_tseg2=2,data_sjw=1)
-	TPCANBitrateFD       string // Represents a PCAN-FD bit rate string
-	TPCANMsgID           uint32 // 11/29-bit message identifier
-	TPCANTimestampFD     uint64 // Represents a timestamp of a received PCAN FD message
+	TPCANLanguage         uint16              // Represents a language chosen for the error messages
+	TPCANHandle           uint16              // Represents a PCAN hardware channel handle
+	TPCANStatus           uint32              // Represents a PCAN status/error code
+	TPCANDevice           uint8               // Represents a PCAN device
+	TPCANParameter        uint8               // Represents a PCAN parameter to be read or set
+	TPCANParameterValue   uint32              // Represents a PCAN parameter value
+	TPCANFilterValue      TPCANParameterValue // Represents a PCAN filter parameter value
+	TPCANCHannelCondition TPCANParameterValue // Represents a PCAN channel condition value
+	TPCANFunctionValue    TPCANParameterValue // Represents a PCAN function parameter value
+	TPCANTraceFileValue   TPCANParameterValue // Represents a PCAN trace file parameter value
+	TPCANFeatureValue     TPCANParameterValue // Represents a PCAN feature parameter value
+	TPCANStatusValue      TPCANParameterValue // Represents a PCAN status parameter value
+	TPCANMessageType      uint8               // Represents the type of a PCAN message
+	TPCANMode             uint8               // Represents a PCAN filter mode
+	TPCANBaudrate         uint16              // Represents a PCAN Baud rate register value (BTR0/BTR1 register values for the CAN controller)
+	TPCANType             uint8               // Represents the type of PCAN hardware to be initialized
+	TPCANLookupParameter  string              // LookUp Parameters
+	TPCANBRParameter      string              // Represents the configuration for a CAN bit rate (Example: f_clock=80000000,nom_brp=10,nom_tseg1=5,nom_tseg2=2,nom_sjw=1,data_brp=4,data_tseg1=7,data_tseg2=2,data_sjw=1)
+	TPCANBitrateFD        string              // Represents a PCAN-FD bit rate string
+	TPCANMsgID            uint32              // 11/29-bit message identifier
+	TPCANTimestampFD      uint64              // Represents a timestamp of a received PCAN FD message
 )
 
 const (
@@ -207,36 +213,50 @@ const (
 
 // PCAN parameter values
 const (
-	PCAN_PARAMETER_OFF       = TPCANParameterValue(0x00)                      // The PCAN parameter is not set (inactive)
-	PCAN_PARAMETER_ON        = TPCANParameterValue(0x01)                      // The PCAN parameter is set (active)
-	PCAN_FILTER_CLOSE        = TPCANParameterValue(0x00)                      // The PCAN filter is closed. No messages will be received
-	PCAN_FILTER_OPEN         = TPCANParameterValue(0x01)                      // The PCAN filter is fully opened. All messages will be received
-	PCAN_FILTER_CUSTOM       = TPCANParameterValue(0x02)                      // The PCAN filter is custom configured. Only registered messages will be received
-	PCAN_CHANNEL_UNAVAILABLE = TPCANParameterValue(0x00)                      // The PCAN-Channel handle is illegal, or its associated hardware is not available
-	PCAN_CHANNEL_AVAILABLE   = TPCANParameterValue(0x01)                      // The PCAN-Channel handle is available to be connected (Plug&Play Hardware: it means furthermore that the hardware is plugged-in)
-	PCAN_CHANNEL_OCCUPIED    = TPCANParameterValue(0x02)                      // The PCAN-Channel handle is valid, and is already being used
+	PCAN_PARAMETER_OFF = TPCANParameterValue(0x00) // The PCAN parameter is not set (inactive)
+	PCAN_PARAMETER_ON  = TPCANParameterValue(0x01) // The PCAN parameter is set (active)
+)
+
+const (
+	PCAN_FILTER_CLOSE  = TPCANFilterValue(0x00) // The PCAN filter is closed. No messages will be received
+	PCAN_FILTER_OPEN   = TPCANFilterValue(0x01) // The PCAN filter is fully opened. All messages will be received
+	PCAN_FILTER_CUSTOM = TPCANFilterValue(0x02) // The PCAN filter is custom configured. Only registered messages will be received
+)
+
+const (
+	PCAN_CHANNEL_UNAVAILABLE = TPCANCHannelCondition(0x00)                    // The PCAN-Channel handle is illegal, or its associated hardware is not available
+	PCAN_CHANNEL_AVAILABLE   = TPCANCHannelCondition(0x01)                    // The PCAN-Channel handle is available to be connected (Plug&Play Hardware: it means furthermore that the hardware is plugged-in)
+	PCAN_CHANNEL_OCCUPIED    = TPCANCHannelCondition(0x02)                    // The PCAN-Channel handle is valid, and is already being used
 	PCAN_CHANNEL_PCANVIEW    = PCAN_CHANNEL_AVAILABLE | PCAN_CHANNEL_OCCUPIED // The PCAN-Channel handle is already being used by a PCAN-View application, but is available to connect
+)
 
-	LOG_FUNCTION_DEFAULT    = TPCANParameterValue(0x00)   // Logs system exceptions / errors
-	LOG_FUNCTION_ENTRY      = TPCANParameterValue(0x01)   // Logs the entries to the PCAN-Basic API functions
-	LOG_FUNCTION_PARAMETERS = TPCANParameterValue(0x02)   // Logs the parameters passed to the PCAN-Basic API functions
-	LOG_FUNCTION_LEAVE      = TPCANParameterValue(0x04)   // Logs the exits from the PCAN-Basic API functions
-	LOG_FUNCTION_WRITE      = TPCANParameterValue(0x08)   // Logs the CAN messages passed to the CAN_Write function
-	LOG_FUNCTION_READ       = TPCANParameterValue(0x10)   // Logs the CAN messages received within the CAN_Read function
-	LOG_FUNCTION_ALL        = TPCANParameterValue(0xFFFF) // Logs all possible information within the PCAN-Basic API functions
+const (
+	LOG_FUNCTION_DEFAULT    = TPCANFunctionValue(0x00)   // Logs system exceptions / errors
+	LOG_FUNCTION_ENTRY      = TPCANFunctionValue(0x01)   // Logs the entries to the PCAN-Basic API functions
+	LOG_FUNCTION_PARAMETERS = TPCANFunctionValue(0x02)   // Logs the parameters passed to the PCAN-Basic API functions
+	LOG_FUNCTION_LEAVE      = TPCANFunctionValue(0x04)   // Logs the exits from the PCAN-Basic API functions
+	LOG_FUNCTION_WRITE      = TPCANFunctionValue(0x08)   // Logs the CAN messages passed to the CAN_Write function
+	LOG_FUNCTION_READ       = TPCANFunctionValue(0x10)   // Logs the CAN messages received within the CAN_Read function
+	LOG_FUNCTION_ALL        = TPCANFunctionValue(0xFFFF) // Logs all possible information within the PCAN-Basic API functions
+)
 
-	TRACE_FILE_SINGLE    = TPCANParameterValue(0x00) // A single file is written until it size reaches PAN_TRACE_SIZE
-	TRACE_FILE_SEGMENTED = TPCANParameterValue(0x01) // Traced data is distributed in several files with size PAN_TRACE_SIZE
-	TRACE_FILE_DATE      = TPCANParameterValue(0x02) // Includes the date into the name of the trace file
-	TRACE_FILE_TIME      = TPCANParameterValue(0x04) // Includes the start time into the name of the trace file
-	TRACE_FILE_OVERWRITE = TPCANParameterValue(0x80) // Causes the overwriting of available traces (same name)
+const (
+	TRACE_FILE_SINGLE    = TPCANTraceFileValue(0x00) // A single file is written until it size reaches PAN_TRACE_SIZE
+	TRACE_FILE_SEGMENTED = TPCANTraceFileValue(0x01) // Traced data is distributed in several files with size PAN_TRACE_SIZE
+	TRACE_FILE_DATE      = TPCANTraceFileValue(0x02) // Includes the date into the name of the trace file
+	TRACE_FILE_TIME      = TPCANTraceFileValue(0x04) // Includes the start time into the name of the trace file
+	TRACE_FILE_OVERWRITE = TPCANTraceFileValue(0x80) // Causes the overwriting of available traces (same name)
+)
 
-	FEATURE_FD_CAPABLE    = TPCANParameterValue(0x01) // Device supports flexible data-rate (CAN-FD)
-	FEATURE_DELAY_CAPABLE = TPCANParameterValue(0x02) // Device supports a delay between sending frames (FPGA based USB devices)
-	FEATURE_IO_CAPABLE    = TPCANParameterValue(0x04) // Device supports I/O functionality for electronic circuits (USB-Chip devices)
+const (
+	FEATURE_FD_CAPABLE    = TPCANFeatureValue(0x01) // Device supports flexible data-rate (CAN-FD)
+	FEATURE_DELAY_CAPABLE = TPCANFeatureValue(0x02) // Device supports a delay between sending frames (FPGA based USB devices)
+	FEATURE_IO_CAPABLE    = TPCANFeatureValue(0x04) // Device supports I/O functionality for electronic circuits (USB-Chip devices)
+)
 
-	SERVICE_STATUS_STOPPED = TPCANParameterValue(0x01) // The service is not running
-	SERVICE_STATUS_RUNNING = TPCANParameterValue(0x04) // The service is running
+const (
+	SERVICE_STATUS_STOPPED = TPCANStatusValue(0x01) // The service is not running
+	SERVICE_STATUS_RUNNING = TPCANStatusValue(0x04) // The service is running
 )
 
 // Represents the type of a PCAN message
@@ -350,5 +370,5 @@ type TPCANChannelInformation struct {
 	DeviceFeatures   uint32                         // Device capabilities flag (see FEATURE_*)
 	DeviceName       [MAX_LENGTH_HARDWARE_NAME]rune // Device name
 	DeviceID         uint32                         // Device number
-	ChannelCondition uint32                         // Availability status of a PCAN-Channel
+	ChannelCondition TPCANCHannelCondition          // Availability status of a PCAN-Channel
 }
