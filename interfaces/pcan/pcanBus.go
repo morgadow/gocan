@@ -661,7 +661,9 @@ func AttachedChannels() ([]TPCANHandle, error) {
 		if state != PCAN_ERROR_OK || err != nil {
 			return nil, err
 		}
-		if cond == TPCANParameterValue(PCAN_CHANNEL_AVAILABLE) {
+		if cond == TPCANParameterValue(PCAN_CHANNEL_AVAILABLE) ||
+			cond == TPCANParameterValue(PCAN_CHANNEL_OCCUPIED) ||
+			cond == TPCANParameterValue(PCAN_CHANNEL_PCANVIEW) {
 			attachedChannels = append(attachedChannels, posChannels[i])
 		}
 	}
