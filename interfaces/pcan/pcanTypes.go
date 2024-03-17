@@ -267,7 +267,7 @@ const (
 	PCAN_MESSAGE_FD       = TPCANMessageType(0x04) // The PCAN message represents a FD frame in terms of CiA Specs
 	PCAN_MESSAGE_BRS      = TPCANMessageType(0x08) // The PCAN message represents a FD bit rate switch (CAN data at a higher bit rate)
 	PCAN_MESSAGE_ESI      = TPCANMessageType(0x10) // The PCAN message represents a FD error state indicator(CAN FD transmitter was error active)
-	PCAN_MESSAGE_ECHO     = TPCANMessageType(0x20) // The PCAN message represents an echo CAN Frame
+	PCAN_MESSAGE_ECHO     = TPCANMessageType(0x20) // The PCAN message represents an echo CAN Frame. This message is set if PCAN_PARAMETER_ALLOW_ECHO is enabled and a sent message is read back
 	PCAN_MESSAGE_ERRFRAME = TPCANMessageType(0x40) // The PCAN message represents an error frame
 	PCAN_MESSAGE_STATUS   = TPCANMessageType(0x80) // The PCAN message represents a PCAN status message
 )

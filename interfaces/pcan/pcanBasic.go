@@ -12,24 +12,32 @@ const driverWin = "PCANBasic.dll"     // PCAN windows driver dll name, which can
 const driverMac = "libPCBUSB.dylib"   // PCAN max driver file name, which can be imported once the PCAN driver is installed
 const driverLinux = "libpcanbasic.so" // PCAN linux driver file name, which can be imported once the PCAN driver is installed
 
+// errrors
 var ErrAPINotLoadedOrFound = errors.New("pcan api not loaded or installed, please load api over pcan.LoadAPI")
 
-var pcanAPIHandle *syscall.DLL = nil // procedure handle for PCAN driver
-var pHandleInitialize *syscall.Proc = nil
-var pHandleInitializeFD *syscall.Proc = nil
-var pHandleUninitialize *syscall.Proc = nil
-var pHandleReset *syscall.Proc = nil
-var pHandleGetStatus *syscall.Proc = nil
-var pHandleRead *syscall.Proc = nil
-var pHandleReadFD *syscall.Proc = nil
-var pHandleWrite *syscall.Proc = nil
-var pHandleWriteFD *syscall.Proc = nil
-var pHandleFilterMessages *syscall.Proc = nil
-var pHandleGetValue *syscall.Proc = nil
-var pHandleSetValue *syscall.Proc = nil
-var pHandleGetErrorText *syscall.Proc = nil
-var pHandleLookUpChannel *syscall.Proc = nil
-var apiLoaded bool
+// api procedures
+var (
+	pcanAPIHandle         *syscall.DLL  = nil // procedure handle for PCAN driver
+	pHandleInitialize     *syscall.Proc = nil
+	pHandleInitializeFD   *syscall.Proc = nil
+	pHandleUninitialize   *syscall.Proc = nil
+	pHandleReset          *syscall.Proc = nil
+	pHandleGetStatus      *syscall.Proc = nil
+	pHandleRead           *syscall.Proc = nil
+	pHandleReadFD         *syscall.Proc = nil
+	pHandleWrite          *syscall.Proc = nil
+	pHandleWriteFD        *syscall.Proc = nil
+	pHandleFilterMessages *syscall.Proc = nil
+	pHandleGetValue       *syscall.Proc = nil
+	pHandleSetValue       *syscall.Proc = nil
+	pHandleGetErrorText   *syscall.Proc = nil
+	pHandleLookUpChannel  *syscall.Proc = nil
+
+	apiLoaded bool = false                     // indicates if the api was loaded already, set by LoadApi() and unset by UnloadApi()
+	isWindows bool = runtime.GOOS == "windows" // inidicates plattform is windows
+	isDarwin  bool = runtime.GOOS == "darwin"  // inidicates plattform is macOS
+	isLinux   bool = (!isWindows && !isDarwin) // inidicates plattform is linux
+)
 
 // Loads PCAN API (.ddl) file
 func LoadAPI() error {
@@ -229,8 +237,8 @@ func GetParameter(channel TPCANHandle, param TPCANParameter) (TPCANStatus, TPCAN
 // Note: Parameters can be present or not according with the kind of Hardware (PCAN Channel) being used.
 // If a parameter is not available, a PCAN_ERROR_ILLPARAMTYPE error will be returned
 func SetParameter(channel TPCANHandle, param TPCANParameter, val TPCANParameterValue) (TPCANStatus, error) {
-	ret, errno := SetValue(channel, param, unsafe.Pointer(&val), uint32(unsafe.Sizeof(val)))
-	return TPCANStatus(ret), sysCallErr(errno)
+	ret, err := SetValue(channel, param, unsafe.Pointer(&val), uint32(unsafe.Sizeof(val)))
+	return TPCANStatus(ret), err
 }
 
 // Retrieves a PCAN Channel value
@@ -306,7 +314,14 @@ func sysCallErr(err error) error {
 	if err != nil {
 		errno := err.(syscall.Errno)
 		if errno != 0 {
-			fmt.Printf("pcan api error: %v\n", errno)
+
+			// suppress this warning as this is set by PCAN api
+			if isWindows && errno == syscall.ERROR_INSUFFICIENT_BUFFER {
+				fmt.Printf("pcan api warning: %v\n", errno)
+				return nil
+			}
+
+			return errors.New(errno.Error())
 		}
 	}
 	return nil

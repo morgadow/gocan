@@ -54,7 +54,7 @@ type Bus interface {
 	Reset() error                                                 // Reset rx and tx buffer, does not reset hardware
 	Shutdown() error                                              // Disconnect from device
 	ChannelCondition() (ChannelCondition, error)                  // Returns channel condition
-	TraceStart(filePath string, maxFileSize uint32) error         // Starts recording a trace on given path with a max file size in MB (0 for unlimited file size)
+	TraceStart(filePath string, maxFileSize uint32) error         // Starts recording a trace on given path with a max file size in MB (0 for unlimited file size). Note: For most hardware, to fill the trace file, the Recv() function must be called!
 	TraceStop() error                                             // Stops recording currently running trace
 }
 

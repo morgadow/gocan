@@ -16,6 +16,12 @@ const PositionStateInDataStatusFrame = 3 // position of TPCANStatus inside a Sta
 var bootTimeEpoch uint64 = 0             // Message epoch time / TODO implement this to be not zero but the correct epoch time (datasheet or maybe python implementation)
 var hasEvents = true                     // indicates if WaitForSingleObject can be used to reduce CPU load while waiting for messages /
 
+var (
+	PCAN_DEFAULT_HW_TYPE   TPCANType = PCAN_TYPE_ISA // Default hardware type for a plug-n-play channel
+	PCAN_DEFAULT_IO_PORT   uint32    = 0x02A0        // Default IO port for a plug-n-play channel
+	PCAN_DEFAULT_INTERRUPT uint16    = 11            // Default interrupt id for a plug-n-play channel
+)
+
 // errors
 var (
 	ErrInvalidChannel  = errors.New("invalid channel selected")
@@ -238,9 +244,9 @@ func NewPCANBus(config *gocan.Config) (gocan.Bus, error) {
 			Handle:    handle,
 			Bitrate:   baud,
 			BitrateFD: bitrateFD,
-			HWType:    PCAN_TYPE_ISA, // default value, might not work for all types of handles
-			IOPort:    0x02A0,        // default value, might not work for all types of handles
-			Interrupt: 11,            // default value, might not work for all types of handles
+			HWType:    PCAN_DEFAULT_HW_TYPE,   // default value, might not work for all types of handles PCAN_DEFAULT_HW_TYPE = PCAN_TYPE_ISA
+			IOPort:    PCAN_DEFAULT_IO_PORT,   // default value, might not work for all types of handles	PCAN_DEFAULT_IO_PORT = 0x02A0
+			Interrupt: PCAN_DEFAULT_INTERRUPT, // default value, might not work for all types of handles	PCAN_DEFAULT_INTERRUPT = 11
 		}
 		err := newBus.Initialize()
 		if err != nil {

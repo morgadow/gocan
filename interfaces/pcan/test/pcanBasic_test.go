@@ -32,6 +32,12 @@ func auxInitBasic() {
 		panic(err)
 	}
 
+	// state, err := pcan.Initialize(HANDLE_FOR_TESTS, pcan.PCAN_BAUD_500K, pcan.PCAN_DEFAULT_HW_TYPE, pcan.PCAN_DEFAULT_IO_PORT, pcan.PCAN_DEFAULT_INTERRUPT)
+	// if err != nil || state != pcan.PCAN_ERROR_OK {
+	// 	fmt.Println(fmt.Errorf("Helper function got error or invalid stats on initialize: %v - %w", state, err))
+	// 	panic(err)
+	// }
+
 	// no error frames
 	state, err = pcan.SetParameter(HANDLE_FOR_TESTS, pcan.PCAN_ALLOW_ERROR_FRAMES, pcan.PCAN_PARAMETER_OFF)
 	if err != nil || state != pcan.PCAN_ERROR_OK {
@@ -46,12 +52,6 @@ func auxInitBasic() {
 		panic(err)
 	}
 
-	// allow echo frames so device can read own messages for testing
-	state, err = pcan.SetParameter(HANDLE_FOR_TESTS, pcan.PCAN_ALLOW_ECHO_FRAMES, pcan.PCAN_PARAMETER_ON)
-	if err != nil || state != pcan.PCAN_ERROR_OK {
-		fmt.Println(fmt.Errorf("Helper function got error or invalid stats on activate echo frames: %v - %w", state, err))
-		panic(err)
-	}
 }
 
 func auxInitFD() {
@@ -67,10 +67,10 @@ func auxReadBasic(timeout time.Duration) (pcan.TPCANStatus, *pcan.TPCANMsg, *pca
 
 	start := time.Now()
 	for time.Since(start) < timeout {
-		state, msg, timestamp, err := pcan.Read(HANDLE_FOR_TESTS) // direct api call
+		state, msg, timestamp, err := pcan.Read(HANDLE_FOR_TESTS)
 		if state != pcan.PCAN_ERROR_QRCVEMPTY {
 			if msg.MsgType == pcan.PCAN_MESSAGE_STANDARD || msg.MsgType == pcan.PCAN_MESSAGE_EXTENDED {
-				fmt.Printf("Got Message: %v - ID: %x, Data: %v, DLC: %v, Type: %v\n", timestamp, msg.ID, msg.DLC, msg.Data, msg.MsgType)
+				fmt.Printf("Got Message: %v - ID: 0x%x, Data: %v, DLC: %v, Type: %v\n", timestamp, msg.ID, msg.DLC, msg.Data, msg.MsgType)
 				return state, &msg, &timestamp, err
 			}
 		}
@@ -92,8 +92,7 @@ func auxErrBufToText(buffer [256]byte) string {
 func TestInitializeBasic(t *testing.T) {
 	state, err := pcan.InitializeBasic(HANDLE_FOR_TESTS, pcan.PCAN_BAUD_500K)
 	if state != pcan.PCAN_ERROR_OK {
-
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -101,11 +100,9 @@ func TestInitializeBasic(t *testing.T) {
 }
 
 func TestInitialize(t *testing.T) {
-
-	state, err := pcan.Initialize(HANDLE_FOR_TESTS, pcan.PCAN_BAUD_500K, pcan.PCAN_TYPE_ISA, 0x02A0, 11)
-
+	state, err := pcan.Initialize(HANDLE_FOR_TESTS, pcan.PCAN_BAUD_500K, pcan.PCAN_DEFAULT_HW_TYPE, pcan.PCAN_DEFAULT_IO_PORT, pcan.PCAN_DEFAULT_INTERRUPT)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -118,7 +115,7 @@ func TestUnitialize(t *testing.T) {
 	state, err := pcan.Uninitialize(HANDLE_FOR_TESTS)
 
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -126,13 +123,11 @@ func TestUnitialize(t *testing.T) {
 }
 
 func TestReset(t *testing.T) {
-
 	auxInitBasic()
+
 	state, err := pcan.Reset(HANDLE_FOR_TESTS)
-
 	if state != pcan.PCAN_ERROR_OK {
-
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -141,9 +136,10 @@ func TestReset(t *testing.T) {
 
 func TestGetStatus(t *testing.T) {
 	auxInitBasic()
+
 	state, err := pcan.GetStatus(HANDLE_FOR_TESTS)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -153,9 +149,10 @@ func TestGetStatus(t *testing.T) {
 // Note: For this test function another bus member has so send any messages on PCAN_USBBUS1 500 kBaud
 func TestRead(t *testing.T) {
 	auxInitBasic()
+
 	state, msg, timestamp, err := auxReadBasic(5000 * time.Millisecond)
-	if state != pcan.PCAN_ERROR_OK || msg.ID == 0x0 {
-		t.Errorf("no message: state: %v, msg: %v, timestamp: %v, err: %v", state, msg, timestamp, err)
+	if state != pcan.PCAN_ERROR_OK || msg == nil || msg.ID == 0x0 {
+		t.Errorf("no message: state: 0x%x, msg: %v, timestamp: %v, err: %v", state, msg, timestamp, err)
 	} else {
 		fmt.Printf("received message: state: %v, msg: %v, timestamp: %v, err: %v\n", state, msg, timestamp, err)
 	}
@@ -163,12 +160,11 @@ func TestRead(t *testing.T) {
 
 // Note: For this test function another bus member has so send specicicly designed messages on PCAN_USBBUS1 500 kBaud
 func TestRead_Specific(t *testing.T) {
-
 	auxInitBasic()
 
 	state, msg, timestamp, err := auxReadBasic(5000 * time.Millisecond)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -195,7 +191,7 @@ func TestRead_Specific(t *testing.T) {
 //
 // 	if state != pcan.PCAN_ERROR_OK  {
 //
-// 		t.Errorf("got non okay status code: %x", state)
+// 		t.Errorf("got non okay status code: 0x%x", state)
 // 	}
 // 	if err != nil {
 // 		t.Errorf("got error: %v", err)
@@ -203,13 +199,13 @@ func TestRead_Specific(t *testing.T) {
 // }
 
 func TestWrite(t *testing.T) {
-
 	auxInitBasic()
+
 	msg := pcan.TPCANMsg{ID: 0x123, Data: [8]byte{0, 1, 2, 3, 4, 5, 6, 7}}
 	state, err := pcan.Write(HANDLE_FOR_TESTS, msg)
 
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -224,7 +220,7 @@ func TestWrite(t *testing.T) {
 // 	state, err := pcan.WriteFD(HANDLE_FOR_TESTS, msg)
 //
 // 	if state != pcan.PCAN_ERROR_OK {
-// 		t.Errorf("got non okay status code: %x", state)
+// 		t.Errorf("got non okay status code: 0x%x", state)
 // 	}
 // 	if err != nil {
 // 		t.Errorf("got error: %v", err)
@@ -234,12 +230,13 @@ func TestWrite(t *testing.T) {
 // TODO: Function does not check the min and max msg ID
 func TestSetFilter(t *testing.T) {
 	auxInitBasic()
+
 	var _trans = map[pcan.TPCANFilterValue]string{pcan.PCAN_FILTER_OPEN: "PCAN_FILTER_OPEN", pcan.PCAN_FILTER_CLOSE: "PCAN_FILTER_CLOSE"}
 
 	// check filter is open
 	state, val, err := pcan.GetParameter(HANDLE_FOR_TESTS, pcan.PCAN_MESSAGE_FILTER)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -251,7 +248,7 @@ func TestSetFilter(t *testing.T) {
 	// set fitler to 29 bit messages
 	state, err = pcan.SetFilter(HANDLE_FOR_TESTS, 0x100, 0x200, pcan.PCAN_MODE_EXTENDED)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -260,7 +257,7 @@ func TestSetFilter(t *testing.T) {
 	// check filter is set
 	state, val, err = pcan.GetParameter(HANDLE_FOR_TESTS, pcan.PCAN_MESSAGE_FILTER)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -272,7 +269,7 @@ func TestSetFilter(t *testing.T) {
 	// delete filter
 	state, err = pcan.ResetFilter(HANDLE_FOR_TESTS)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -281,7 +278,7 @@ func TestSetFilter(t *testing.T) {
 	// check filter is open
 	state, val, err = pcan.GetParameter(HANDLE_FOR_TESTS, pcan.PCAN_MESSAGE_FILTER)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -293,7 +290,7 @@ func TestSetFilter(t *testing.T) {
 	// set filter for 11 bit messages
 	state, err = pcan.SetFilter(HANDLE_FOR_TESTS, 0x100, 0x200, pcan.PCAN_MODE_STANDARD)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -302,7 +299,7 @@ func TestSetFilter(t *testing.T) {
 	// check filter is set
 	state, val, err = pcan.GetParameter(HANDLE_FOR_TESTS, pcan.PCAN_MESSAGE_FILTER)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -321,7 +318,7 @@ func TestSetFilter_Specific(t *testing.T) {
 	state, err := pcan.SetFilter(HANDLE_FOR_TESTS, 0x100, 0x200, pcan.PCAN_MODE_STANDARD)
 	fmt.Println("Set to: HANDLE_FOR_TESTS, 0x100, 0x200, pcan.PCAN_MODE_STANDARD")
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -339,7 +336,7 @@ func TestSetFilter_Specific(t *testing.T) {
 			t.Errorf("expected only STANDARD messages, got: %v", msg.MsgType)
 		}
 		if msg.ID < 0x100 || msg.ID > 0x200 {
-			t.Errorf("expected msg ID from 0x100 to 0x200, got: %x", msg.ID)
+			t.Errorf("expected msg ID from 0x100 to 0x200, got: 0x%x", msg.ID)
 		}
 	}
 
@@ -347,7 +344,7 @@ func TestSetFilter_Specific(t *testing.T) {
 	state, err = pcan.SetFilter(HANDLE_FOR_TESTS, 0x200, 0x400, pcan.PCAN_MODE_EXTENDED)
 	fmt.Println("Set to: HANDLE_FOR_TESTS, 0x200, 0x400, pcan.PCAN_MODE_EXTENDED ")
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -365,7 +362,7 @@ func TestSetFilter_Specific(t *testing.T) {
 			t.Errorf("expected only EXTENDED messages, got: %v", msg.MsgType)
 		}
 		if msg.ID < 0x200 || msg.ID > 0x400 {
-			t.Errorf("expected msg ID from 0x200 to 0x400, got: %x", msg.ID)
+			t.Errorf("expected msg ID from 0x200 to 0x400, got: 0x%x", msg.ID)
 		}
 	}
 }
@@ -374,7 +371,7 @@ func TestResetFilter(t *testing.T) {
 	auxInitBasic()
 	state, err := pcan.ResetFilter(HANDLE_FOR_TESTS)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -388,7 +385,7 @@ func TestSetErrorFrames(t *testing.T) {
 	// deactivate error frames
 	state, err := pcan.SetParameter(HANDLE_FOR_TESTS, pcan.PCAN_ALLOW_ERROR_FRAMES, pcan.PCAN_PARAMETER_OFF)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -397,7 +394,7 @@ func TestSetErrorFrames(t *testing.T) {
 	// check
 	state, val, err := pcan.GetParameter(HANDLE_FOR_TESTS, pcan.PCAN_ALLOW_ERROR_FRAMES)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -409,7 +406,7 @@ func TestSetErrorFrames(t *testing.T) {
 	// activate error frames
 	state, err = pcan.SetParameter(HANDLE_FOR_TESTS, pcan.PCAN_ALLOW_ERROR_FRAMES, pcan.PCAN_PARAMETER_ON)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -418,7 +415,7 @@ func TestSetErrorFrames(t *testing.T) {
 	// check
 	state, val, err = pcan.GetParameter(HANDLE_FOR_TESTS, pcan.PCAN_ALLOW_ERROR_FRAMES)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -435,7 +432,7 @@ func TestSetStatusFrames(t *testing.T) {
 	// deactivate status frames
 	state, err := pcan.SetParameter(HANDLE_FOR_TESTS, pcan.PCAN_ALLOW_STATUS_FRAMES, pcan.PCAN_PARAMETER_OFF)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -444,7 +441,7 @@ func TestSetStatusFrames(t *testing.T) {
 	// check
 	state, val, err := pcan.GetParameter(HANDLE_FOR_TESTS, pcan.PCAN_ALLOW_STATUS_FRAMES)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -456,7 +453,7 @@ func TestSetStatusFrames(t *testing.T) {
 	// activate status frames
 	state, err = pcan.SetParameter(HANDLE_FOR_TESTS, pcan.PCAN_ALLOW_STATUS_FRAMES, pcan.PCAN_PARAMETER_ON)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -465,7 +462,7 @@ func TestSetStatusFrames(t *testing.T) {
 	// check
 	state, val, err = pcan.GetParameter(HANDLE_FOR_TESTS, pcan.PCAN_ALLOW_STATUS_FRAMES)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -482,7 +479,7 @@ func TestSetEchoFrames(t *testing.T) {
 	// deactivate echo frames
 	state, err := pcan.SetParameter(HANDLE_FOR_TESTS, pcan.PCAN_ALLOW_ECHO_FRAMES, pcan.PCAN_PARAMETER_OFF)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -491,7 +488,7 @@ func TestSetEchoFrames(t *testing.T) {
 	// check
 	state, val, err := pcan.GetParameter(HANDLE_FOR_TESTS, pcan.PCAN_ALLOW_ECHO_FRAMES)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -503,7 +500,7 @@ func TestSetEchoFrames(t *testing.T) {
 	// activate echo frames
 	state, err = pcan.SetParameter(HANDLE_FOR_TESTS, pcan.PCAN_ALLOW_ECHO_FRAMES, pcan.PCAN_PARAMETER_ON)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -512,7 +509,7 @@ func TestSetEchoFrames(t *testing.T) {
 	// check
 	state, val, err = pcan.GetParameter(HANDLE_FOR_TESTS, pcan.PCAN_ALLOW_ECHO_FRAMES)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -526,7 +523,7 @@ func TestGetChannelCondition(t *testing.T) {
 	auxInitBasic()
 	state, val, err := pcan.GetParameter(HANDLE_FOR_TESTS, pcan.PCAN_CHANNEL_CONDITION)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -538,13 +535,48 @@ func TestGetChannelCondition(t *testing.T) {
 
 func TestSetIdentifying(t *testing.T) {
 	auxInitBasic()
+	var _trans = map[pcan.TPCANParameterValue]string{pcan.PCAN_PARAMETER_OFF: "PCAN_PARAMETER_OFF", pcan.PCAN_PARAMETER_ON: "PCAN_PARAMETER_ON"}
 
+	// activate
 	state, err := pcan.SetParameter(HANDLE_FOR_TESTS, pcan.PCAN_CHANNEL_IDENTIFYING, pcan.PCAN_PARAMETER_ON)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
+	}
+
+	// check
+	state, val, err := pcan.GetParameter(HANDLE_FOR_TESTS, pcan.PCAN_CHANNEL_IDENTIFYING)
+	if state != pcan.PCAN_ERROR_OK {
+		t.Errorf("got non okay status code: 0x%x", state)
+	}
+	if err != nil {
+		t.Errorf("got error: %v", err)
+	}
+	if val != pcan.PCAN_PARAMETER_ON {
+		t.Errorf("setting was not set correctly to PCAN_PARAMETER_ON: %v", _trans[val])
+	}
+
+	// deactivate
+	state, err = pcan.SetParameter(HANDLE_FOR_TESTS, pcan.PCAN_CHANNEL_IDENTIFYING, pcan.PCAN_PARAMETER_OFF)
+	if state != pcan.PCAN_ERROR_OK {
+		t.Errorf("got non okay status code: 0x%x", state)
+	}
+	if err != nil {
+		t.Errorf("got error: %v", err)
+	}
+
+	// check
+	state, val, err = pcan.GetParameter(HANDLE_FOR_TESTS, pcan.PCAN_CHANNEL_IDENTIFYING)
+	if state != pcan.PCAN_ERROR_OK {
+		t.Errorf("got non okay status code: 0x%x", state)
+	}
+	if err != nil {
+		t.Errorf("got error: %v", err)
+	}
+	if val != pcan.PCAN_PARAMETER_OFF {
+		t.Errorf("setting was not set correctly to PCAN_PARAMETER_OFF: %v", _trans[val])
 	}
 }
 
@@ -552,7 +584,7 @@ func TestReadOnly(t *testing.T) {
 	auxInitBasic()
 	state, err := pcan.SetParameter(HANDLE_FOR_TESTS, pcan.PCAN_LISTEN_ONLY, pcan.PCAN_PARAMETER_ON)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -575,7 +607,7 @@ func TestGetErrorText(t *testing.T) {
 	// check retval == PCAN_ERROR_OK
 	state, _, err := pcan.GetErrorText(pcan.PCAN_ERROR_OK, pcan.LanguageGerman)
 	if state != pcan.PCAN_ERROR_OK {
-		t.Errorf("got non okay status code: %x", state)
+		t.Errorf("got non okay status code: 0x%x", state)
 	}
 	if err != nil {
 		t.Errorf("got error: %v", err)
@@ -633,7 +665,7 @@ func TestGetErrorText(t *testing.T) {
 //
 // 	state, handle, err := pcan.LookUpChannel(deviceType, deviceID, controllerNumber, iPAddress)
 // 	if state != pcan.PCAN_ERROR_OK {
-// 		t.Errorf("got non okay status code: %x", state)
+// 		t.Errorf("got non okay status code: 0x%x", state)
 // 	}
 // 	if err != nil {
 // 		t.Errorf("got error: %v", err)
