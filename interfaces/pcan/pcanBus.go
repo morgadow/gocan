@@ -520,7 +520,13 @@ func (p *pcanBus) SetValue(param TPCANParameter, val TPCANParameterValue) error 
 
 // Apply message filter to PCANStandardBus channel
 func (p *pcanBus) SetFilter(fromID gocan.MessageID, toID gocan.MessageID, mode uint8) error {
-	state, err := FilterMessages(p.Handle, TPCANMsgID(fromID), TPCANMsgID(toID), TPCANMode(mode))
+	state, err := SetFilter(p.Handle, TPCANMsgID(fromID), TPCANMsgID(toID), TPCANMode(mode))
+	return evalRetval(state, err)
+}
+
+// Removes set message filter
+func (p *pcanBus) ResetFilter() error {
+	state, err := ResetFilter(p.Handle)
 	return evalRetval(state, err)
 }
 
@@ -532,9 +538,8 @@ func (p *pcanBus) Reset() error {
 
 // Shuts channel down and closes connection
 func (p *pcanBus) Shutdown() error {
-
 	state, err := Uninitialize(p.Handle)
-	if p.recvEvent != 0 { // close handle
+	if p.recvEvent != 0 {
 		_ = syscall.CloseHandle(p.recvEvent)
 	}
 	return evalRetval(state, err)
@@ -625,7 +630,7 @@ func (p *pcanBus) TraceStart(filePath string, maxFileSize uint32) error {
 	for i := range filePath {
 		buffer[i] = byte(filePath[i])
 	}
-	state, err = SetValue(p.Handle, PCAN_TRACE_LOCATION, unsafe.Pointer(&buffer), unsafe.Sizeof(buffer))
+	state, err = SetValue(p.Handle, PCAN_TRACE_LOCATION, unsafe.Pointer(&buffer), uint32(unsafe.Sizeof(buffer)))
 	if err != nil || state != PCAN_ERROR_OK {
 		return evalRetval(state, err)
 	}

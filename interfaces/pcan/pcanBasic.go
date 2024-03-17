@@ -2,6 +2,7 @@ package pcan
 
 import (
 	"errors"
+	"fmt"
 	"runtime"
 	"syscall"
 	"unsafe"
@@ -197,14 +198,17 @@ func WriteFD(channel TPCANHandle, msgFD TPCANMsgFD) (TPCANStatus, error) {
 // fromID: The lowest CAN ID to be received
 // toID: The highest CAN ID to be received
 // mode: Message type, Standard (11-bit identifier) or Extended (29-bit identifier)
-func FilterMessages(channel TPCANHandle, fromID TPCANMsgID, toID TPCANMsgID, mode TPCANMode) (TPCANStatus, error) {
+func SetFilter(channel TPCANHandle, fromID TPCANMsgID, toID TPCANMsgID, mode TPCANMode) (TPCANStatus, error) {
 	ret, _, errno := pHandleFilterMessages.Call(uintptr(channel), uintptr(fromID), uintptr(toID), uintptr(mode))
-	return TPCANStatus(ret), sysCallErr(errno)
+	if TPCANStatus(ret) != PCAN_ERROR_OK {
+		return TPCANStatus(ret), sysCallErr(errno)
+	}
+	return SetParameter(channel, PCAN_MESSAGE_FILTER, TPCANParameterValue(PCAN_FILTER_CLOSE)) // confirm filter
 }
 
-// the filter applied to handle
+// Resets message filter set by SetFilter() function
 func ResetFilter(channel TPCANHandle) (TPCANStatus, error) {
-	return PCAN_ERROR_OK, nil // TODO this function is empty!?
+	return SetParameter(channel, PCAN_MESSAGE_FILTER, TPCANParameterValue(PCAN_FILTER_OPEN))
 }
 
 // Retrieves a PCAN Channel value using a defined parameter value type
@@ -225,7 +229,7 @@ func GetParameter(channel TPCANHandle, param TPCANParameter) (TPCANStatus, TPCAN
 // Note: Parameters can be present or not according with the kind of Hardware (PCAN Channel) being used.
 // If a parameter is not available, a PCAN_ERROR_ILLPARAMTYPE error will be returned
 func SetParameter(channel TPCANHandle, param TPCANParameter, val TPCANParameterValue) (TPCANStatus, error) {
-	ret, errno := SetValue(channel, param, unsafe.Pointer(&val), unsafe.Sizeof(val))
+	ret, errno := SetValue(channel, param, unsafe.Pointer(&val), uint32(unsafe.Sizeof(val)))
 	return TPCANStatus(ret), sysCallErr(errno)
 }
 
@@ -246,8 +250,8 @@ func GetValue(channel TPCANHandle, param TPCANParameter, buffer unsafe.Pointer, 
 // value: Value of parameter
 // Note: Parameters can be present or not according with the kind of Hardware (PCAN Channel) being used.
 // If a parameter is not available, a PCAN_ERROR_ILLPARAMTYPE error will be returned
-func SetValue(channel TPCANHandle, param TPCANParameter, buffer unsafe.Pointer, bufferSize uintptr) (TPCANStatus, error) {
-	ret, _, errno := pHandleSetValue.Call(uintptr(channel), uintptr(param), uintptr(buffer), bufferSize)
+func SetValue(channel TPCANHandle, param TPCANParameter, buffer unsafe.Pointer, bufferSize uint32) (TPCANStatus, error) {
+	ret, _, errno := pHandleSetValue.Call(uintptr(channel), uintptr(param), uintptr(buffer), uintptr(bufferSize))
 	return TPCANStatus(ret), sysCallErr(errno)
 }
 
@@ -299,12 +303,11 @@ func LookUpChannel(deviceType string, deviceID string, controllerNumber string, 
 
 // helper function to handle syscall return value
 func sysCallErr(err error) error {
-	if err == nil {
-		return err
-	}
-	errno := err.(syscall.Errno)
-	if errno != 0 {
-		return errors.New(errno.Error())
+	if err != nil {
+		errno := err.(syscall.Errno)
+		if errno != 0 {
+			fmt.Printf("pcan api error: %v\n", errno)
+		}
 	}
 	return nil
 }

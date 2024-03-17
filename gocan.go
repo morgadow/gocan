@@ -50,6 +50,7 @@ type Bus interface {
 	State() BusState                                              // Returns the bus state (ACTIVE or PASSIVE)
 	ReadBuffer(limit uint16) ([]Message, error)                   // Empties the internal CAN hardware message buffer is device supports this feature with a maximum message count
 	SetFilter(fromID MessageID, toID MessageID, mode uint8) error // Set a message id filter on hardware if supported by device
+	ResetFilter() error                                           // Removes set message filter
 	Reset() error                                                 // Reset rx and tx buffer, does not reset hardware
 	Shutdown() error                                              // Disconnect from device
 	ChannelCondition() (ChannelCondition, error)                  // Returns channel condition
