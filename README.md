@@ -143,6 +143,7 @@ type Bus interface {
   - Updated internal PCAN interface error handling to be cleaner
   - Added warnings on incompatible but working PCAN API calls
   - Updated test functions
+  - Updated readme with compatibility hint
 
 ## Known Issues
 
