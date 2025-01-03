@@ -33,7 +33,10 @@ var (
 	pHandleGetErrorText   *syscall.Proc = nil
 	pHandleLookUpChannel  *syscall.Proc = nil
 
-	apiLoaded bool = false                     // indicates if the api was loaded already, set by LoadApi() and unset by UnloadApi()
+	apiLoaded bool = false // indicates if the api was loaded already, set by LoadApi() and unset by UnloadApi()
+)
+
+var (
 	isWindows bool = runtime.GOOS == "windows" // inidicates plattform is windows
 	isDarwin  bool = runtime.GOOS == "darwin"  // inidicates plattform is macOS
 	isLinux   bool = (!isWindows && !isDarwin) // inidicates plattform is linux

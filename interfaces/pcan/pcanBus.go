@@ -3,6 +3,7 @@ package pcan
 import (
 	"errors"
 	"fmt"
+	"log"
 	"syscall"
 	"time"
 	"unsafe"
@@ -394,16 +395,17 @@ func (p *pcanBus) recvSingleMessage() (TPCANStatus, *gocan.Message, error) {
 		rxData = msg.Data[:getLengthFromDLC(rxDLC)] // only return the suggested message length, even if full message is held in buffer with 8 byte
 	}
 
-	// determine message frame type	// TODO rewrite switch?
-	if rxMsgType == PCAN_MESSAGE_STANDARD || rxMsgType == PCAN_MESSAGE_EXTENDED || rxMsgType == PCAN_MESSAGE_FD {
+	// determine message frame type
+	switch rxMsgType {
+	case PCAN_MESSAGE_STANDARD, PCAN_MESSAGE_EXTENDED, PCAN_MESSAGE_FD:
 		msgType = gocan.DataFrame
-	} else if rxMsgType == PCAN_MESSAGE_RTR {
+	case PCAN_MESSAGE_RTR:
 		msgType = gocan.RemoteFrame
-	} else if rxMsgType == PCAN_MESSAGE_ERRFRAME || rxMsgType == PCAN_MESSAGE_STATUS {
+	case PCAN_MESSAGE_ERRFRAME, PCAN_MESSAGE_STATUS:
 		msgType = gocan.ErrorFrame
-	} else if rxMsgType == PCAN_MESSAGE_BRS {
+	case PCAN_MESSAGE_BRS:
 		msgType = gocan.FDBitRateSwitchFrame
-	} else if rxMsgType == PCAN_MESSAGE_ESI {
+	case PCAN_MESSAGE_ESI:
 		msgType = gocan.FDErrorStateIndicator
 	}
 
@@ -683,8 +685,10 @@ func AttachedChannels() ([]TPCANHandle, error) {
 }
 
 // Returns list of all existing PCAN channels on a system in a single call, regardless of their current availability
-// TODO This function is not working correctly, as the given information does not matched connected hardware
+// TODO This function is not working correctly, as the given information does not matched connected hardware, use AttachedChannels instead
 func AttachedChannels_Extended() ([]TPCANChannelInformation, error) {
+	log.Fatalf("This function is not working correctly, as the given information does not matched connected hardware, use AttachedChannels instead!") // TODO
+
 	count, err := AttachedChannelsCount()
 	if err != nil || count == 0 { // size calculation not possible with a slice len of 0
 		return nil, err

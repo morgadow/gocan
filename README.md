@@ -110,7 +110,25 @@ type Bus interface {
   - changed pcan handle initialization to be only for plug n play devices on gocan interface, old variant still usable for direct pcan interface call
 
 - v1.1.1:
-  - bugfix in pcan interface error handling where nil errors are tried to convert into syscall errors 
+  - bugfix in pcan interface error handling where nil errors are tried to convert into syscall errors
+
+- v1.1.2:
+  - Updated trace handling for PCAN interface. MaxFileSize is now uint32 not int
+
+- v1.1.3:
+  - Introduced more specific PCAN parameter types
+  - Improved function to retrieve available PCAN channels
+  - Fixed a bug where available pcan channels would not ne displayed
+  - Added interval timing test and added more unit-tests
+
+- v1.1.4:
+  - Updated documentation
+
+- v1.2.0:
+  - Updated go version from go1.16 to go1.23
+  - Updated internal PCAN interface error handling to be cleaner
+  - Added warnings on incompatible but working PCAN API calls
+  - Updated test functions
 
 ## Known Issues
 
@@ -122,10 +140,9 @@ This section lists all known-issues, missing features and open bugs.
 
 - missing documentation examples for new functions
 - Invalid buffer size error in LookupChannel function
-- error FILE_NOT_FOUND when calling the Shutdown or Uninitialize function: problem probably located in .dll file itself
+- error FILE_NOT_FOUND when calling the Shutdown or Uninitialize function: problem probably located in .dll call itself
 - FilterMessages function not working correctly; does not apply any filter to the PCAN channel
 - Missing implementation of any further filter option as message masks
 - Missing implementation of CANFD functionality due to missing test hardware
 - Evaluation of channel condition propably incorrect as every connection is marked as unavailable
 - Setting parameter as the PCAN_READ_ONLY does not have an impact, reading of message is still possible
-- Recorded trace files maintain empty even there is traffic on selected CAN bus
