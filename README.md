@@ -1,7 +1,8 @@
 # gocan
 
 A Golang CAN Bus interface supporting different CAN device manufactures.
-Supports Windows, Linux and MacOS.
+
+> Note: This package currently only supports windows. Any help porting this to other platforms is welcome! 
 
 ```golang
 // Interface for all main CANBus functionality. Lower device interfaces may support more functionality
@@ -43,8 +44,20 @@ type Bus interface {
   fmt.Printf("\nMsg ID: %v, Msg DLC: %v, Msg Data: %v", rxMsg.ID, rxMsg.DLC, rxMsg.Data)
  }
 
- // Send a message over the bus
+ // Send a extended type message over the bus
  txMsg := bus.Message{
+  ID:   0x12345,
+  DLC:  8,
+  Data: []uint8{1, 2, 3, 4, 5, 6, 7, 8},
+  IsExtended: true}
+
+ err = pcanBus.Send(&txMsg)
+ if err != nil {
+  fmt.Printf(err.Error())
+ }
+ 
+ // Send a standard type message over the bus
+ txMsg = bus.Message{
   ID:   0x123,
   DLC:  8,
   Data: []uint8{1, 2, 3, 4, 5, 6, 7, 8}}
@@ -53,6 +66,7 @@ type Bus interface {
  if err != nil {
   fmt.Printf(err.Error())
  }
+
 
  // Check if bus is okay
  ok, err := pcanBus.StatusIsOkay()
